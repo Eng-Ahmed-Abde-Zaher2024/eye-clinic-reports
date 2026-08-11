@@ -79,13 +79,23 @@ $(async function () {
 
     (currentTemplate.fields || []).forEach((f) => {
       const isDate = /تاريخ|date/i.test(f.key + f.label);
-      const defaultVal = isDate ? today : "";
-      $form.append(`
-        <div class="field">
-          <label>${escapeHtml(f.label)}</label>
-          <input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="${escapeHtml(defaultVal)}" />
-        </div>
-      `);
+      if (isDate) {
+        // حقل تاريخ → date picker (كليندر)
+        const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        $form.append(`
+          <div class="field">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" />
+          </div>
+        `);
+      } else {
+        $form.append(`
+          <div class="field">
+            <label>${escapeHtml(f.label)}</label>
+            <input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" />
+          </div>
+        `);
+      }
     });
 
     $form.on("input", ".dyn-input", renderPreview);
@@ -101,7 +111,19 @@ $(async function () {
 
     const values = {};
     $(".dyn-input").each(function () {
-      values[$(this).data("key")] = $(this).val() || "";
+      const raw = $(this).val() || "";
+      if ($(this).hasClass("date-input") && raw) {
+        // تحويل YYYY-MM-DD إلى تنسيق عربي مقروء
+        const parts = raw.split("-");
+        if (parts.length === 3) {
+          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          values[$(this).data("key")] = d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+        } else {
+          values[$(this).data("key")] = raw;
+        }
+      } else {
+        values[$(this).data("key")] = raw;
+      }
     });
 
     let html = currentTemplate.bodyHtml || "";
