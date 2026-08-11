@@ -186,6 +186,22 @@ a {
   background: #fff;
 }
 
+/* حقل التاريخ — كليندر */
+.field input[type="date"] {
+  cursor: pointer;
+  direction: ltr;        /* الكليندر يعمل أفضل بـ LTR داخليًا */
+  text-align: right;     /* النص يبقى على اليمين */
+  color-scheme: light;
+}
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.7;
+  cursor: pointer;
+  filter: invert(30%) sepia(100%) saturate(400%) hue-rotate(200deg);
+  margin-left: 0;
+  margin-right: auto;
+}
+
+
 .error-msg {
   background: #fdeef0;
   color: var(--danger);
@@ -323,7 +339,7 @@ a {
 .container {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 28px 22px 60px;
+  /* padding: 28px 22px 60px; */
 }
 
 .page-head {
