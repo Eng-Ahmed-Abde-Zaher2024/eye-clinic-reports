@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>إصدار تقرير — مركز الخبراء</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <div class="topbar no-print-hidden-on-print">
+    <div class="topbar-brand">
+      <img src="assets/logo.png" alt="شعار" />
+      <span class="topbar-clinic-name">مركز الخبراء</span>
+    </div>
+    <div class="topbar-nav">
+      <a href="print.html" class="active">طباعة تقرير</a>
+      <a href="admin.html" class="admin-only-link">لوحة الإدارة</a>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user-name"></span>
+      <button class="btn btn-outline btn-sm btn-logout">خروج</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-head no-print-hidden-on-print">
+      <div>
+        <h2>إصدار تقرير حالة</h2>
+        <p>اختر القالب، عدّل البيانات الخاصة بالمريض فقط، ثم اطبع مباشرة على ورق A4.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- يسار: اختيار القالب + الحقول -->
+      <div class="card no-print-hidden-on-print">
+        <div class="field">
+          <label>نوع التقرير</label>
+          <select id="templateSelect"></select>
+        </div>
+
+        <div class="field">
+          <label>الطبيب المعالج</label>
+          <select id="doctorSelect">
+            <option value="">— اختر طبيباً —</option>
+          </select>
+        </div>
+
+        <div class="field-placeholder-note">
+          الحقول التالية فقط هي التي تختلف من مريض لآخر، وباقي نص التقرير جاهز تلقائيًا حسب القالب المختار.
+        </div>
+
+        <form id="reportForm" class="report-form"></form>
+
+        <button class="btn btn-primary btn-block" id="printBtn" style="margin-top:6px;">
+          🖨️ طباعة التقرير
+        </button>
+      </div>
+
+      <!-- يمين: المعاينة -->
+      <div class="page-preview-wrap">
+        <div class="a4-page" id="a4Page">
+          <img class="a4-watermark" id="watermarkImg" src="assets/logo.png" alt="" />
+          <div class="a4-content">
+            <div class="a4-header">
+              <div class="a4-header-doctor" id="headerDoctorWrap">
+                <span class="a4-header-doctor-name" id="headerDoctorName"></span>
+                <span class="a4-header-doctor-title" id="headerDoctorTitle"></span>
+              </div>
+              <div class="a4-header-clinic">
+                <div class="a4-clinic-name" id="clinicNameEl">مركز الخبراء</div>
+                <div class="a4-clinic-sub">لطب وجراحة العيون والليزك</div>
+              </div>
+              <img id="headerLogo" src="assets/logo.png" alt="" />
+            </div>
+            <div class="a4-title" id="reportTitle">—</div>
+            <div class="a4-body" id="reportBody"></div>
+          </div>
+          <div class="a4-footer">
+            <div class="a4-footer-top">
+              <span class="a4-footer-date" id="footerDate"></span>
+              <span class="a4-footer-badge">✦ صادر إلكترونيًا</span>
+            </div>
+            <div class="a4-footer-bottom">
+              <span class="a4-footer-clinic" id="footerClinicName">مركز الخبراء لطب وجراحة العيون والليزك</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <footer class="site-footer no-print-hidden-on-print">
+    <div class="site-footer-inner">
+      <div class="site-footer-badge">
+        <svg class="footer-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+        </svg>
+        <span>تم بحمد الله</span>
+      </div>
+
+      <div class="site-footer-divider"></div>
+
+      <div class="site-footer-dev">
+        <svg class="footer-icon-svg dev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        <span>تم تطوير وإنشاء الموقع بواسطة <strong class="dev-name">البشمهندس أحمد عبد الظاهر</strong></span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/vendor/jquery.min.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/print.js"></script>
+</body>
+
+</html>

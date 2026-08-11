@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>لوحة الإدارة — مركز الخبراء</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="assets/logo.png" alt="شعار" />
+    <span class="topbar-clinic-name">مركز الخبراء</span>
+  </div>
+  <div class="topbar-nav">
+    <a href="print.html">طباعة تقرير</a>
+    <a href="admin.html" class="active admin-only-link">لوحة الإدارة</a>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-user-name"></span>
+    <button class="btn btn-outline btn-sm btn-logout">خروج</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-head">
+    <div>
+      <h2>لوحة الإدارة</h2>
+      <p>إدارة قوالب التقارير والمستخدمين، والاستيراد والتصدير كملفات إكسل.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="templates">قوالب التقارير</button>
+    <button class="tab-btn" data-tab="users">المستخدمون</button>
+    <button class="tab-btn" data-tab="settings">⚙️ إعدادات العيادة</button>
+  </div>
+
+  <!-- ============ TEMPLATES TAB ============ -->
+  <div class="tab-panel active" id="tab-templates">
+    <div class="grid-2">
+      <div class="card">
+        <h3>القوالب الحالية</h3>
+        <div id="templatesList" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h3>إضافة / استيراد قوالب</h3>
+
+        <p style="font-size:13px;color:var(--text-dim);margin:10px 0 14px;">
+          يمكنك إضافة قالب واحد يدويًا، أو استيراد عدة قوالب دفعة واحدة من ملف إكسل
+          بنفس تنسيق ملف التصدير.
+        </p>
+
+        <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" id="btnNewTemplate">+ قالب جديد يدويًا</button>
+          <button class="btn btn-outline btn-sm" id="btnExportTemplates">⬇️ تصدير القوالب كإكسل</button>
+          <button class="btn btn-outline btn-sm" id="btnExportJson">📦 تصدير ملفات JSON لـ جيت هب</button>
+        </div>
+
+        <label class="dropzone" for="excelInput">
+          📄 اسحب ملف إكسل هنا أو اضغط للاختيار<br />
+          <small>الأعمدة المطلوبة: name, category, body, fields</small>
+          <input type="file" id="excelInput" accept=".xlsx,.xls" />
+        </label>
+        <div id="importSummary" style="margin-top:12px;font-size:13px;color:var(--text-dim);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ USERS TAB ============ -->
+  <div class="tab-panel" id="tab-users">
+    <div class="grid-2">
+      <div class="card">
+        <h3>المستخدمون الحاليون</h3>
+        <div id="usersList" style="margin-top:14px;"></div>
+      </div>
+      <div class="card">
+        <h3>إضافة مستخدم جديد</h3>
+        <form id="userForm">
+          <div class="field">
+            <label>الاسم الكامل</label>
+            <input type="text" id="u_fullName" required />
+          </div>
+          <div class="field">
+            <label>اسم المستخدم (للدخول)</label>
+            <input type="text" id="u_username" required />
+          </div>
+          <div class="field">
+            <label>كلمة المرور</label>
+            <input type="text" id="u_password" required />
+          </div>
+          <div class="field">
+            <label>الصلاحية</label>
+            <select id="u_role">
+              <option value="agent">موظف استقبال (Agent) — طباعة التقارير فقط</option>
+              <option value="admin">مدير (Admin) — كل الصلاحيات</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">إضافة المستخدم</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS TAB ============ -->
+  <div class="tab-panel" id="tab-settings">
+    <div class="grid-2">
+
+      <!-- يمين: قائمة الأطباء + إضافة -->
+      <div class="card">
+        <h3>👨‍⚕️ قائمة الأطباء</h3>
+        <p style="font-size:13px;color:var(--text-dim);margin:8px 0 16px;">
+          أضف أطباء العيادة — ستظهر كقائمة منسدلة عند إصدار التقرير.
+        </p>
+
+        <form id="doctorForm" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+          <div class="field" style="margin:0;">
+            <label>اسم الطبيب</label>
+            <input type="text" id="d_name" placeholder="مثال: د. أحمد محمد" required />
+          </div>
+          <div class="field" style="margin:0;">
+            <label>اللقب / التخصص</label>
+            <input type="text" id="d_title" placeholder="مثال: استشاري طب وجراحة العيون" required />
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-start;">+ إضافة طبيب</button>
+        </form>
+
+        <div id="doctorsList"></div>
+      </div>
+
+      <!-- يسار: إعدادات العيادة -->
+      <div class="card">
+        <h3>🏥 إعدادات العيادة</h3>
+        <p style="font-size:13px;color:var(--text-dim);margin:8px 0 16px;">
+          اسم العيادة الذي يظهر في هيدر وفوتر التقرير.
+        </p>
+        <form id="settingsForm">
+          <div class="field">
+            <label>اسم العيادة</label>
+            <input type="text" id="s_clinicName" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">✔️ حفظ</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ Template edit modal ============ -->
+<div class="modal-backdrop" id="tplModal">
+  <div class="modal-box">
+    <h3 id="tplModalTitle">قالب جديد</h3>
+    <form id="tplForm">
+      <div class="field">
+        <label>اسم القالب</label>
+        <input type="text" id="tpl_name" required />
+      </div>
+      <div class="field">
+        <label>التصنيف</label>
+        <input type="text" id="tpl_category" placeholder="مثال: كشف عام، الليزك، الشبكية..." />
+      </div>
+      <div class="field">
+        <label>الحقول المتغيّرة (تُملأ لكل مريض)</label>
+        <div id="tpl_fields"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="addFieldRow" style="margin-top:6px;">+ إضافة حقل</button>
+        <small style="display:block;margin-top:6px;">لكل حقل: مفتاح بالإنجليزية (name) واسم يظهر للموظف (اسم المريض)</small>
+      </div>
+      <div class="field">
+        <label>نص التقرير (استخدم &#123;&#123;المفتاح&#125;&#125; لإدراج الحقول)</label>
+        <textarea id="tpl_body" rows="7" placeholder="مثال: اسم المريض: {{name}} - السن: {{age}}"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="tplCancel">إلغاء</button>
+        <button type="submit" class="btn btn-primary btn-sm">حفظ القالب</button>
+      </div>
+    </form>
+  </div>
+<footer class="site-footer no-print-hidden-on-print">
+  <div class="site-footer-inner">
+    <div class="site-footer-badge">
+      <svg class="footer-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+      </svg>
+      <span>تم بحمد الله</span>
+    </div>
+
+    <div class="site-footer-divider"></div>
+
+    <div class="site-footer-dev">
+      <svg class="footer-icon-svg dev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      <span>تم تطوير وإنشاء الموقع بواسطة <strong class="dev-name">البشمهندس أحمد عبد الظاهر</strong></span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/vendor/jquery.min.js"></script>
+<script src="js/vendor/xlsx.full.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

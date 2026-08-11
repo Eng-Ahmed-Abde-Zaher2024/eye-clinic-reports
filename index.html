@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>تسجيل الدخول — مركز الخبراء</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <img src="assets/logo.png" class="logo" alt="شعار المركز" />
+    <h1>مركز الخبراء</h1>
+    <p class="sub">نظام طباعة تقارير الحالات — لطب وجراحة العيون والليزك</p>
+
+    <div class="error-msg" id="loginError">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label>اسم المستخدم</label>
+        <input type="text" id="username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <input type="password" id="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">تسجيل الدخول</button>
+    </form>
+
+    <div class="hint-box">
+      بيانات الدخول الافتراضية (يفضّل تغييرها من صفحة الإدارة):<br />
+      <b>مدير:</b> admin / Admin@123<br />
+      <b>موظف استقبال:</b> agent / Agent@123
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer no-print-hidden-on-print">
+  <div class="site-footer-inner">
+    <div class="site-footer-badge">
+      <svg class="footer-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+      </svg>
+      <span>تم بحمد الله</span>
+    </div>
+
+    <div class="site-footer-divider"></div>
+
+    <div class="site-footer-dev">
+      <svg class="footer-icon-svg dev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      <span>تم تطوير وإنشاء الموقع بواسطة <strong class="dev-name">البشمهندس أحمد عبد الظاهر</strong></span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/vendor/jquery.min.js"></script>
+<script src="js/db.js"></script>
+<script>
+  // لو المستخدم مسجل دخوله بالفعل، حوّله مباشرة
+  if (DB.Session.current()) {
+    window.location.href = "print.html";
+  }
+
+  $("#loginForm").on("submit", function (e) {
+    e.preventDefault();
+    const username = $("#username").val().trim();
+    const password = $("#password").val();
+    const user = DB.Users.findByUsername(username);
+
+    if (!user || user.password !== password) {
+      $("#loginError").show();
+      return;
+    }
+    $("#loginError").hide();
+    DB.Session.login(user);
+    window.location.href = "print.html";
+  });
+</script>
+</body>
+</html>

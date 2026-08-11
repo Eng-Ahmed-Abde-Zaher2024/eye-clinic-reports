@@ -1,0 +1,16 @@
+[
+  {
+    "id": "u_admin",
+    "username": "admin",
+    "password": "Admin@123",
+    "fullName": "مدير النظام",
+    "role": "admin"
+  },
+  {
+    "id": "u_agent",
+    "username": "agent",
+    "password": "Agent@123",
+    "fullName": "موظف الاستقبال",
+    "role": "agent"
+  }
+]
