@@ -327,6 +327,12 @@ $(function () {
   }
 
   /* ---------------- Access Control Management ---------------- */
+  function getChipIcon(item) {
+    if (/^dev_/i.test(item)) return '📱 ';
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(item)) return '🌐 ';
+    return '👤 ';
+  }
+
   function renderACUI() {
     if (typeof AccessControl === "undefined") return;
     var cfg = AccessControl.getConfig();
@@ -342,10 +348,11 @@ $(function () {
       $bChips.html('<span style="font-size:12px; color:var(--dim)">لا توجد عناصر محظورة</span>');
     } else {
       cfg.blacklist.forEach(function (item) {
+        var icon = getChipIcon(item);
         $bChips.append(`
-          <span style="background:rgba(232,57,79,0.12); color:var(--coral); font-size:12px; font-weight:700; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:6px;">
-            ${escapeHtml(item)}
-            <button class="remove-ac-chip" data-type="black" data-val="${escapeHtml(item)}" style="border:none; background:none; color:var(--coral); cursor:pointer; font-weight:bold;">×</button>
+          <span style="background:rgba(232,57,79,0.12); color:var(--coral); font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px;">
+            ${icon}${escapeHtml(item)}
+            <button class="remove-ac-chip" data-type="black" data-val="${escapeHtml(item)}" style="border:none; background:none; color:var(--coral); cursor:pointer; font-weight:bold; font-size:14px;">×</button>
           </span>
         `);
       });
@@ -357,15 +364,17 @@ $(function () {
       $wChips.html('<span style="font-size:12px; color:var(--dim)">لا توجد عناصر مسموح بها حصراً</span>');
     } else {
       cfg.whitelist.forEach(function (item) {
+        var icon = getChipIcon(item);
         $wChips.append(`
-          <span style="background:rgba(52,183,160,0.12); color:var(--teal); font-size:12px; font-weight:700; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:6px;">
-            ${escapeHtml(item)}
-            <button class="remove-ac-chip" data-type="white" data-val="${escapeHtml(item)}" style="border:none; background:none; color:var(--teal); cursor:pointer; font-weight:bold;">×</button>
+          <span style="background:rgba(52,183,160,0.12); color:var(--teal); font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px;">
+            ${icon}${escapeHtml(item)}
+            <button class="remove-ac-chip" data-type="white" data-val="${escapeHtml(item)}" style="border:none; background:none; color:var(--teal); cursor:pointer; font-weight:bold; font-size:14px;">×</button>
           </span>
         `);
       });
     }
   }
+
 
   // Radio mode change
   $("input[name='acMode']").on("change", function () {
@@ -547,31 +556,53 @@ $(function () {
       }
 
       var devId = (v.deviceid || v.deviceId || "").trim();
-      var userTarget = (v.username || v.fullName || "").trim();
-      // الترتيب: اسم المستخدم -> معرف الجهاز المكتبي/الموبايل (فريد) -> عنوان IP
-      var primaryTarget = userTarget || devId || (v.ip || "").trim();
+      var devName = (v.devicename || v.deviceName || "").trim();
+      var ip = (v.ip || "").trim();
+      var username = (v.username || "").trim();
+      var primaryTarget = devId || username || ip;
 
       var displayIpParts = [];
-      if (v.ip) {
-        displayIpParts.push(`<span style="font-family:monospace; font-size:11px; background:rgba(30,143,213,0.08); color:var(--navy); padding:2px 5px; border-radius:4px;" title="عنوان IP الخاص بالشبكة">🌐 ${escapeHtml(v.ip)}</span>`);
+      if (ip) {
+        displayIpParts.push(`<div style="font-family:monospace; color:var(--navy); font-weight:700;">🌐 ${escapeHtml(ip)}</div>`);
+      }
+      if (devName) {
+        displayIpParts.push(`<div style="color:#475569; font-size:10.5px; font-weight:600; margin-top:2px;">📱 ${escapeHtml(devName)}</div>`);
       }
       if (devId) {
-        displayIpParts.push(`<span style="font-family:monospace; font-size:10px; background:rgba(107,116,136,0.1); color:#475569; padding:2px 5px; border-radius:4px;" title="معرف الجهاز الفريد: ${escapeHtml(devId)}">📱 ${escapeHtml(devId.slice(0, 12))}...</span>`);
+        displayIpParts.push(`<div style="font-family:monospace; font-size:9.5px; color:var(--dim); margin-top:2px;" title="المعرف الفريد للجهاز: ${escapeHtml(devId)}">🆔 ${escapeHtml(devId.slice(0, 14))}...</div>`);
       }
-      var displayIp = displayIpParts.join("<br/>") || "—";
+      var displayIp = displayIpParts.join("") || "—";
       var userInfo = isLogged ? `${escapeHtml(v.fullName || v.username || "")} <small style="color:var(--dim)">(${escapeHtml(v.role || "")})</small>` : "—";
 
-
-      // زر الإجراء السريع (حظر / إلغاء حظر)
-      var actionBtn = "—";
-      if (primaryTarget && cfg) {
-        var isBlockedItem = cfg.blacklist.includes(primaryTarget);
-        if (isBlockedItem) {
-          actionBtn = `<button class="btn-toggle-block tbtn" data-target="${escapeHtml(primaryTarget)}" style="background:var(--teal); font-size:11px; padding:3px 8px;">✅ إلغاء الحظر</button>`;
-        } else {
-          actionBtn = `<button class="btn-toggle-block tbtn danger" data-target="${escapeHtml(primaryTarget)}" style="font-size:11px; padding:3px 8px;">⛔ حظر</button>`;
+      // أزرار الإجراءات المخصصة بالاستهداف
+      var actionBtns = [];
+      if (cfg) {
+        if (devId) {
+          var isDevBlocked = cfg.blacklist.includes(devId);
+          actionBtns.push(`
+            <button class="btn-toggle-block tbtn ${isDevBlocked ? '' : 'danger'}" data-target="${escapeHtml(devId)}" style="font-size:10.5px; padding:2px 7px; ${isDevBlocked ? 'background:var(--teal);' : ''}">
+              ${isDevBlocked ? '✅ إلغاء حظر الجهاز' : '📱 حظر الجهاز فقط'}
+            </button>
+          `);
+        }
+        if (ip) {
+          var isIpBlocked = cfg.blacklist.includes(ip);
+          actionBtns.push(`
+            <button class="btn-toggle-block tbtn ${isIpBlocked ? '' : 'danger'}" data-target="${escapeHtml(ip)}" style="font-size:10px; padding:2px 6px; opacity:0.85; ${isIpBlocked ? 'background:var(--teal);' : ''}">
+              ${isIpBlocked ? '✅ إلغاء حظر الـ IP' : '🌐 حظر الـ IP بالكامل'}
+            </button>
+          `);
+        }
+        if (username) {
+          var isUserBlocked = cfg.blacklist.includes(username);
+          actionBtns.push(`
+            <button class="btn-toggle-block tbtn ${isUserBlocked ? '' : 'danger'}" data-target="${escapeHtml(username)}" style="font-size:10px; padding:2px 6px; ${isUserBlocked ? 'background:var(--teal);' : ''}">
+              ${isUserBlocked ? '✅ إلغاء حظر المستخدم' : '👤 حظر المستخدم'}
+            </button>
+          `);
         }
       }
+      var actionBtn = actionBtns.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px;">${actionBtns.join("")}</div>` : "—";
 
       $tbody.append(`
         <tr>
@@ -587,6 +618,7 @@ $(function () {
           <td>${actionBtn}</td>
         </tr>
       `);
+
     });
 
     // Pagination buttons

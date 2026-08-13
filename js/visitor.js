@@ -35,6 +35,19 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     return 'Desktop';
   }
 
+  /* ---------- كشف اسم ونوع الجهاز بالكامل ---------- */
+  function detectDeviceName(ua) {
+    var os = 'Unknown OS';
+    if (/Android/i.test(ua))       os = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iPhone/iOS';
+    else if (/Windows/i.test(ua))  os = 'Windows PC';
+    else if (/Macintosh|Mac OS/i.test(ua)) os = 'Mac OS';
+    else if (/Linux/i.test(ua))    os = 'Linux';
+
+    var br = detectBrowser(ua);
+    return os + ' (' + br + ')';
+  }
+
   /* ---------- اسم الصفحة ---------- */
   function getPage() {
     var p = location.pathname.split('/').pop();
@@ -61,25 +74,28 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
   function buildEntry(ip) {
     var ua      = navigator.userAgent;
     var session = getSession();
+    var devId   = getDeviceId();
     return {
-      id:        Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      timestamp: new Date().toISOString(),
-      ip:        ip || '',
-      deviceId:  getDeviceId(),
-      deviceid:  getDeviceId(),
-      page:      getPage(),
-
-      browser:   detectBrowser(ua),
-      device:    detectDevice(ua),
-      language:  navigator.language || '',
-      screen:    screen.width + 'x' + screen.height,
-      referrer:  document.referrer || '',
-      loggedIn:  !!session,
-      username:  session ? (session.username || '') : '',
-      fullName:  session ? (session.fullName  || '') : '',
-      role:      session ? (session.role      || '') : ''
+      id:         Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      timestamp:  new Date().toISOString(),
+      ip:         ip || '',
+      deviceId:   devId,
+      deviceid:   devId,
+      deviceName: detectDeviceName(ua),
+      devicename: detectDeviceName(ua),
+      page:       getPage(),
+      browser:    detectBrowser(ua),
+      device:     detectDevice(ua),
+      language:   navigator.language || '',
+      screen:     screen.width + 'x' + screen.height,
+      referrer:   document.referrer || '',
+      loggedIn:   !!session,
+      username:   session ? (session.username || '') : '',
+      fullName:   session ? (session.fullName  || '') : '',
+      role:       session ? (session.role      || '') : ''
     };
   }
+
 
   /* ---------- إرسال للـ Google Sheets (بصمت) ---------- */
   function sendToSheets(entry) {
