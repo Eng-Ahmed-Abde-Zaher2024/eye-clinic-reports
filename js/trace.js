@@ -9,11 +9,33 @@ var TRACE_PASSWORD = "Admin@123"; // كلمة سر صفحة التتبع
 var APPS_SCRIPT_GET_URL = "https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec"; // رابط Google Apps Script المباشر
 /* ==================================================== */
 
+/* ---------- حفظ إعدادات الحظر/السماح إلى السيرفر تلقائياً ---------- */
+function saveConfigToServer(cfg) {
+  if (!APPS_SCRIPT_GET_URL || APPS_SCRIPT_GET_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  try {
+    fetch(APPS_SCRIPT_GET_URL + '?action=saveConfig', {
+      method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify(cfg)
+    });
+  } catch(_) {}
+}
+
 $(function () {
   var allVisits = [];
   var filteredVisits = [];
   var currentPage = 1;
   var pageSize = 15;
+
+  /* — اعتراض saveConfig لإرسالها للسيرفر عند كل تغيير — */
+  if (typeof AccessControl !== 'undefined') {
+    var _origSave = AccessControl.saveConfig.bind(AccessControl);
+    AccessControl.saveConfig = function(cfg) {
+      _origSave(cfg);
+      saveConfigToServer(cfg); // تحديث فوري للسيرفر
+    };
+  }
 
   /* ---------------- Lock Screen ---------------- */
   function unlock() {

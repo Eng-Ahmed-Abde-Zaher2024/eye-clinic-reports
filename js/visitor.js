@@ -8,6 +8,11 @@
    ==================================================== */
 var VISITOR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
 /* ==================================================== */
+// حفظ الرابط في localStorage لاستخدامه في access_control.js
+if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+  try { localStorage.setItem('eyeclinic_script_url', VISITOR_SCRIPT_URL); } catch(_) {}
+}
+
 
 (function () {
   // لا تسجّل صفحة التتبع نفسها

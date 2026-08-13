@@ -1,41 +1,63 @@
 // ============================================================
-//   apps_script.js — كود Google Apps Script
+//   apps_script.js — كود Google Apps Script v2.1
 //   انسخ هذا الكود كاملاً في Google Apps Script
-// ============================================================
-//
-// خطوات الإعداد:
-// 1. افتح Google Sheets جديد
-// 2. من القائمة: Extensions > Apps Script
-// 3. احذف الكود الموجود والصق هذا الكود
-// 4. اضغط Save (Ctrl+S)
-// 5. اضغط Deploy > New deployment
-// 6. اختر Type: Web app
-// 7. Execute as: Me
-// 8. Who has access: Anyone
-// 9. اضغط Deploy وانسخ الرابط (URL)
-// 10. ضع الرابط في js/visitor.js و js/trace.js
+//   ثم: Deploy > Manage deployments > تعديل > إصدار جديد > نشر
 // ============================================================
 
 var SHEET_NAME = 'Visits';
-var MAX_ROWS   = 5000; // أقصى عدد سجلات نحتفظ بها
+var MAX_ROWS   = 5000;
+
+/* ---- إصلاح / إنشاء رأس الجدول تلقائياً ---- */
+function ensureHeaders(sheet) {
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'ID','Timestamp','Page','Browser','Device',
+      'Language','Screen','Referrer','LoggedIn',
+      'Username','FullName','Role','IP','DeviceID'
+    ]);
+    sheet.getRange(1, 1, 1, 14).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    return;
+  }
+  // شيت موجود — فحص إذا كان عمود IP مفقود (إصدار قديم)
+  var lastCol    = sheet.getLastColumn();
+  var headerVals = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var headerLow  = headerVals.map(function(h) { return String(h).toLowerCase().trim(); });
+  if (headerLow.indexOf('ip') === -1) {
+    sheet.getRange(1, 13).setValue('IP');
+    sheet.getRange(1, 14).setValue('DeviceID');
+    sheet.getRange(1, 1, 1, 14).setFontWeight('bold');
+  }
+}
+
+/* ---- حفظ إعدادات الحظر/السماح في الشيت (POST saveConfig) ---- */
+function doPost(e) {
+  var action = (e && e.parameter && e.parameter.action) || '';
+
+  if (action === 'saveConfig') {
+    try {
+      var ss2   = SpreadsheetApp.getActiveSpreadsheet();
+      var cfgSh = ss2.getSheetByName('Config') || ss2.insertSheet('Config');
+      cfgSh.getRange('A1').setValue(e.postData.contents);
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: false, err: err.message }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
 
 /* ---- استقبال زيارة جديدة (POST) ---- */
-function doPost(e) {
+// (visit record)
   try {
     var data   = JSON.parse(e.postData.contents);
     var ss     = SpreadsheetApp.getActiveSpreadsheet();
     var sheet  = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
 
-    // إنشاء الرأس عند أول مرة
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        'ID','Timestamp','Page','Browser','Device',
-        'Language','Screen','Referrer','LoggedIn',
-        'Username','FullName','Role'
-      ]);
-      sheet.getRange(1, 1, 1, 12).setFontWeight('bold');
-      sheet.setFrozenRows(1);
-    }
+    // إصلاح / إنشاء الرأس تلقائياً
+    ensureHeaders(sheet);
 
     sheet.appendRow([
       data.id        || '',
@@ -49,7 +71,9 @@ function doPost(e) {
       data.loggedIn  ? 'YES' : 'NO',
       data.username  || '',
       data.fullName  || '',
-      data.role      || ''
+      data.role      || '',
+      data.ip        || '',
+      data.deviceId  || ''
     ]);
 
     // حذف الصفوف القديمة إذا تجاوزنا الحد
@@ -101,29 +125,35 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  /* --- مسح الزيارات (مع كود تأكيد) --- */
-  if (action === 'clear') {
-    var secret = e.parameter.secret || '';
-    var ss2    = SpreadsheetApp.getActiveSpreadsheet();
-    var cfg    = ss2.getSheetByName('Config');
-    var clearSecret = cfg ? cfg.getRange('B1').getValue() : '';
-
-    if (!clearSecret || secret !== String(clearSecret)) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ ok: false, err: 'Unauthorized' }))
-        .setMimeType(ContentService.MimeType.JSON);
+  /* --- قراءة إعدادات الحظر/السماح --- */
+  if (action === 'getConfig') {
+    var ss3   = SpreadsheetApp.getActiveSpreadsheet();
+    var cfgSh = ss3.getSheetByName('Config');
+    var raw   = cfgSh ? String(cfgSh.getRange('A1').getValue()) : '';
+    if (!raw || raw === 'undefined') {
+      raw = JSON.stringify({ mode: 'blacklist', blacklist: [], whitelist: [],
+                             subscriptionPhone: '01126611570',
+                             priceText: '100 ج.م شهرياً عبر انستا باي (InstaPay)',
+                             customNotice: 'تواصل مع إدارة النظام لتفعيل حسابك بعد التحويل.' });
     }
+    return ContentService
+      .createTextOutput(raw)
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
-    var sh = ss2.getSheetByName(SHEET_NAME);
+  /* --- مسح الزيارات (مباشر بدون كود سري) --- */
+  if (action === 'clear') {
+    var ss2 = SpreadsheetApp.getActiveSpreadsheet();
+    var sh  = ss2.getSheetByName(SHEET_NAME);
     if (sh && sh.getLastRow() > 1) {
       sh.deleteRows(2, sh.getLastRow() - 1);
     }
     return ContentService
-      .createTextOutput(JSON.stringify({ ok: true }))
+      .createTextOutput(JSON.stringify({ ok: true, cleared: true }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
   return ContentService
-    .createTextOutput('Eye Clinic Visitor Tracker v1.0')
+    .createTextOutput('Eye Clinic Visitor Tracker v2.1')
     .setMimeType(ContentService.MimeType.TEXT);
 }

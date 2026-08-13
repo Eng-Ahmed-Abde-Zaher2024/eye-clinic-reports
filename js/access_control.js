@@ -182,12 +182,32 @@ const AccessControl = (() => {
   }
 
   function checkAndEnforce() {
-    if (isBlocked()) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderBlockScreen);
-      } else {
-        renderBlockScreen();
-      }
+    if (/trace\.html/i.test(location.pathname)) return;
+
+    // رابط السكريبت — يقرأه من المتغير العام أو localStorage
+    var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
+                     VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
+                  ? VISITOR_SCRIPT_URL
+                  : (localStorage.getItem('eyeclinic_script_url') || '');
+
+    if (scriptUrl) {
+      // ① جلب الإعدادات من السيرفر (الأدمن يحدّثها من trace.html)
+      fetch(scriptUrl + '?action=getConfig')
+        .then(function(r) { return r.json(); })
+        .then(function(serverCfg) {
+          if (serverCfg && typeof serverCfg === 'object') {
+            // السيرفر هو المرجع — يُحدَّث localStorage تلقائياً
+            saveConfig(serverCfg);
+          }
+          if (isBlocked()) renderBlockScreen();
+        })
+        .catch(function () {
+          // إذا فشل الجلب — استخدم الإعدادات المحلية الاحتياطية
+          if (isBlocked()) renderBlockScreen();
+        });
+    } else {
+      // لا يوجد رابط → استخدم localStorage فقط
+      if (isBlocked()) renderBlockScreen();
     }
   }
 
