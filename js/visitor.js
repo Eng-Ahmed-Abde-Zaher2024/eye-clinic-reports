@@ -189,30 +189,35 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     } catch (_) {}
   }
 
-  /* ---------- جلب IP بالتوازي من 3 خدمات + timeout 4 ثواني ---------- */
+  /* ---------- جلب IP بالتوازي من خدمات CORS-safe فقط + timeout 4 ثواني ---------- */
   function fetchIpBackground(onDone) {
     var resolved = false;
     var timer    = setTimeout(function () {
       if (!resolved) { resolved = true; onDone(''); }
     }, 4000);
 
+    // فقط خدمات تدعم CORS بشكل صحيح (بدون ipapi.co لتجنب 429/CORS errors)
     var APIs = [
       { url: 'https://api.ipify.org?format=json', key: 'ip' },
-      { url: 'https://ipapi.co/json',             key: 'ip' },
-      { url: 'https://api.ip.sb/geoip',           key: 'ip' }
+      { url: 'https://api64.ipify.org?format=json', key: 'ip' }
     ];
 
     APIs.forEach(function (api) {
-      fetch(api.url)
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (!resolved && d && d[api.key] && /^[\d.]+$/.test(d[api.key])) {
-            resolved = true;
-            clearTimeout(timer);
-            onDone(d[api.key]);
-          }
-        })
-        .catch(function () {});
+      try {
+        fetch(api.url, { mode: 'cors', credentials: 'omit' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('non-ok');
+            return r.json();
+          })
+          .then(function (d) {
+            if (!resolved && d && d[api.key] && /^[\d.a-f:]+$/i.test(d[api.key])) {
+              resolved = true;
+              clearTimeout(timer);
+              onDone(d[api.key]);
+            }
+          })
+          .catch(function () { /* CORS/network error — skip silently */ });
+      } catch (_) { /* skip */ }
     });
   }
 

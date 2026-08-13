@@ -572,6 +572,7 @@ const DB = (() => {
     downloadJsonFile("doctors.json", Doctors.all());
     setTimeout(() => downloadJsonFile("templates.json", Templates.all()), 300);
     setTimeout(() => downloadJsonFile("clinic.json", Clinic.get()), 600);
+    setTimeout(() => downloadJsonFile("users.json", Users.all()), 900);
   }
 
   return {

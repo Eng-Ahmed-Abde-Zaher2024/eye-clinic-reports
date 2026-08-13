@@ -26,6 +26,62 @@ $(async function () {
     setTimeout(() => $t.removeClass("show"), 2600);
   }
 
+  /* =========================================================
+     UNIVERSAL POPUP CONFIRMATION SYSTEM
+     ========================================================= */
+  let activeConfirmCallback = null;
+
+  function showConfirmPopup(options) {
+    const title = options.title || "تأكيد الإجراء";
+    const message = options.message || "هل أنت تأكد من الاستمرار؟";
+    const confirmText = options.confirmText || "نعم، تأكيد الإجراء";
+    const cancelText = options.cancelText || "إلغاء";
+    const isDanger = options.type !== "info";
+
+    $("#confirmPopupTitle").text(title);
+    $("#confirmPopupMessage").text(message);
+    $("#confirmPopupOkBtn").text(confirmText);
+    $("#confirmPopupCancelBtn").text(cancelText);
+
+    if (isDanger) {
+      $("#confirmPopupOkBtn").removeClass("btn-primary").addClass("btn-danger");
+      $("#confirmPopupIcon").css("background", "#fdeef0").html(`
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      `);
+    } else {
+      $("#confirmPopupOkBtn").removeClass("btn-danger").addClass("btn-primary");
+      $("#confirmPopupIcon").css("background", "#eaf4fd").html(`
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1e8fd5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      `);
+    }
+
+    activeConfirmCallback = options.onConfirm || null;
+    $("#confirmPopupModal").addClass("show");
+  }
+
+  $("#confirmPopupOkBtn").on("click", function () {
+    $("#confirmPopupModal").removeClass("show");
+    if (typeof activeConfirmCallback === "function") {
+      activeConfirmCallback();
+      activeConfirmCallback = null;
+    }
+  });
+
+  $("#confirmPopupCancelBtn, #confirmPopupModal").on("click", function (e) {
+    if (e.target === this || e.target.id === "confirmPopupCancelBtn") {
+      $("#confirmPopupModal").removeClass("show");
+      activeConfirmCallback = null;
+    }
+  });
+
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
@@ -141,8 +197,13 @@ $(async function () {
       <div class="dyn-field-row" data-prev-key="${escapeHtml(key)}" data-prev-label="${escapeHtml(label)}">
         <input type="text" class="fld-key" placeholder="key (بالإنجليزية)" value="${escapeHtml(key)}" />
         <input type="text" class="fld-label" placeholder="اسم الحقل (يظهر للموظف)" value="${escapeHtml(label)}" />
-        <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل والاسم العربي عند موضع المؤشر الحالي">📌 إدراج</button>
-        <button type="button" class="btn btn-danger btn-sm btn-remove-field" title="حذف الحقل">✕</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل والاسم العربي عند موضع المؤشر الحالي">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
+          إدراج
+        </button>
+        <button type="button" class="btn btn-danger btn-sm btn-remove-field" title="حذف الحقل">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
     `);
     $("#tpl_fields").append($row);
@@ -252,11 +313,19 @@ $(async function () {
   });
   $("#templatesList").on("click", ".btn-del-tpl", function () {
     const id = $(this).closest(".list-item").data("id");
-    if (confirm("هل تريد حذف هذا القالب؟")) {
-      DB.Templates.remove(id);
-      renderTemplates();
-      showToast("تم حذف القالب");
-    }
+    const tpl = DB.Templates.get(id);
+    const tplName = tpl ? tpl.name : "هذا القالب";
+    showConfirmPopup({
+      title: "حذف قالب",
+      message: `هل أنت متاكد من حذف "${tplName}"؟ لن تظهر التقارير المرتبطة به في قائمة الاختيار بعد الآن.`,
+      confirmText: "حذف القالب",
+      type: "danger",
+      onConfirm: function () {
+        DB.Templates.remove(id);
+        renderTemplates();
+        showToast("تم حذف القالب بنجاح");
+      }
+    });
   });
 
   $("#tplForm").on("submit", function (e) {
@@ -494,52 +563,163 @@ $(async function () {
   }
 
   /* =========================================================
-     USERS
+     USERS — إدارة كاملة للمستخدمين (CRUD + Popups)
      ========================================================= */
   function renderUsers() {
     const users = DB.Users.all();
     const $list = $("#usersList").empty();
+    const currentSession = DB.Session.current();
+    const currentUserId = currentSession ? currentSession.userId : session.userId;
+
+    if (users.length === 0) {
+      $list.html(`<div class="empty-fields-note">لا يوجد مستخدمون بعد.</div>`);
+      return;
+    }
+
     users.forEach((u) => {
-      const isSelf = u.id === session.userId;
+      const isSelf = u.id === currentUserId;
       $list.append(`
         <div class="list-item" data-id="${u.id}">
           <div class="li-main">
-            <div class="li-title">${escapeHtml(u.fullName)} <span class="badge ${u.role === "admin" ? "admin" : ""}">${u.role === "admin" ? "مدير" : "موظف استقبال"}</span></div>
-            <div class="li-sub">اسم الدخول: ${escapeHtml(u.username)}</div>
+            <div class="li-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              ${escapeHtml(u.fullName)}
+              <span class="badge ${u.role === "admin" ? "admin" : ""}">${u.role === "admin" ? "مدير" : "موظف استقبال"}</span>
+              ${isSelf ? '<span class="badge" style="background:#eaf8f4;color:#10b981;">حسابك الحالي</span>' : ""}
+            </div>
+            <div class="li-sub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px;">
+              <span><strong>اسم الدخول:</strong> ${escapeHtml(u.username)}</span>
+              <span>·</span>
+              <span><strong>كلمة المرور:</strong> <code class="pwd-code" data-pwd="${escapeHtml(u.password)}">••••••••</code></span>
+              <button type="button" class="btn-toggle-pwd" style="border:none;background:none;cursor:pointer;font-size:13px;color:var(--blue);padding:0 2px;" title="إظهار / إخفاء كلمة المرور">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
           </div>
           <div class="li-actions">
-            ${isSelf ? "" : `<button class="btn btn-danger btn-sm btn-del-user">حذف</button>`}
+            <button class="btn btn-outline btn-sm btn-edit-user" title="تعديل حساب المستخدم">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              تعديل
+            </button>
+            ${isSelf ? "" : `<button class="btn btn-danger btn-sm btn-del-user" title="حذف حساب المستخدم"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>حذف</button>`}
           </div>
         </div>
       `);
     });
   }
 
-  $("#usersList").on("click", ".btn-del-user", function () {
-    const id = $(this).closest(".list-item").data("id");
-    if (confirm("هل تريد حذف هذا المستخدم؟")) {
-      DB.Users.remove(id);
-      renderUsers();
-      showToast("تم حذف المستخدم");
+  // --- إظهار / إخفاء كلمة المرور ---
+  $("#usersList").on("click", ".btn-toggle-pwd", function () {
+    const $btn = $(this);
+    const $code = $btn.siblings("span").find(".pwd-code");
+    const pwd = $code.data("pwd");
+    if ($code.text() === "••••••••") {
+      $code.text(pwd).css({ background: "#ffffff", border: "1px solid var(--line)", padding: "2px 6px", borderRadius: "5px", color: "#1b2340", fontWeight: "700" });
+      $btn.html(`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`);
+    } else {
+      $code.text("••••••••").css({ background: "none", border: "none", padding: "0", color: "inherit", fontWeight: "normal" });
+      $btn.html(`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`);
     }
   });
 
+  // --- إضافة مستخدم جديد ---
   $("#userForm").on("submit", function (e) {
     e.preventDefault();
     const username = $("#u_username").val().trim();
+    const fullName = $("#u_fullName").val().trim();
+    const password = $("#u_password").val();
+    const role = $("#u_role").val();
+
     if (DB.Users.findByUsername(username)) {
-      showToast("اسم المستخدم موجود بالفعل", true);
+      showToast("اسم المستخدم موجود بالفعل، يرجى اختيار اسم آخر", true);
       return;
     }
-    DB.Users.add({
-      fullName: $("#u_fullName").val().trim(),
-      username,
-      password: $("#u_password").val(),
-      role: $("#u_role").val()
-    });
+
+    DB.Users.add({ fullName, username, password, role });
     this.reset();
     renderUsers();
     showToast("تم إضافة المستخدم بنجاح");
+  });
+
+  // --- فتح نافذة تعديل المستخدم ---
+  function openUserEditModal(user) {
+    if (!user) return;
+    $("#edit_u_id").val(user.id);
+    $("#edit_u_fullName").val(user.fullName || "");
+    $("#edit_u_username").val(user.username || "");
+    $("#edit_u_password").val(user.password || "");
+    $("#edit_u_role").val(user.role || "agent");
+    $("#userEditModal").addClass("show");
+  }
+
+  $("#cancelUserEditBtn, #userEditModal").on("click", function (e) {
+    if (e.target === this || e.target.id === "cancelUserEditBtn") {
+      $("#userEditModal").removeClass("show");
+    }
+  });
+
+  $("#usersList").on("click", ".btn-edit-user", function () {
+    const id = $(this).closest(".list-item").data("id");
+    const user = DB.Users.all().find((u) => u.id === id);
+    openUserEditModal(user);
+  });
+
+  // --- حفظ تعديل بيانات المستخدم ---
+  $("#userEditForm").on("submit", function (e) {
+    e.preventDefault();
+    const id = $("#edit_u_id").val();
+    const fullName = $("#edit_u_fullName").val().trim();
+    const username = $("#edit_u_username").val().trim();
+    const password = $("#edit_u_password").val();
+    const role = $("#edit_u_role").val();
+
+    if (!fullName || !username || !password) {
+      showToast("يرجى ملء جميع الحقول المطلوبة", true);
+      return;
+    }
+
+    // التحقق من تكرار اسم المستخدم مع حساب آخر
+    const duplicate = DB.Users.all().find((u) => u.username.trim().toLowerCase() === username.toLowerCase() && u.id !== id);
+    if (duplicate) {
+      showToast("اسم المستخدم هذا مستخدم بالفعل للحساب آخر", true);
+      return;
+    }
+
+    DB.Users.update(id, { fullName, username, password, role });
+
+    // إذا كان الحساب الذي تم تعديله هو حساب الجلسة الحالية -> تحديث البيانات "لتسمع" في الهيدر والنافبار فورياً
+    const currentSession = DB.Session.current();
+    if (currentSession && currentSession.userId === id) {
+      DB.Session.login({ id, username, fullName, role });
+      $("#topbarUserName").text(fullName);
+      $("#drawerUserName").text(fullName);
+      $("#drawerUserRole").text(role === "admin" ? "مدير النظام" : "موظف استقبال");
+      const avatar = fullName.charAt(0) || "م";
+      $("#drawerUserAvatar").text(avatar);
+    }
+
+    $("#userEditModal").removeClass("show");
+    renderUsers();
+    showToast("تم تحديث بيانات المستخدم بنجاح");
+  });
+
+  // --- حذف مستخدم (عبر بوب-أب التنبيه) ---
+  $("#usersList").on("click", ".btn-del-user", function () {
+    const id = $(this).closest(".list-item").data("id");
+    const user = DB.Users.all().find((u) => u.id === id);
+    const uName = user ? (user.fullName || user.username) : "هذا المستخدم";
+
+    showConfirmPopup({
+      title: "حذف حساب مستخدم",
+      message: `هل أنت متأكد من حذف حساب "${uName}"؟ لن يتمكن من تسجيل الدخول للنظام بعد الآن.`,
+      confirmText: "حذف حساب المستخدم",
+      type: "danger",
+      onConfirm: function () {
+        DB.Users.remove(id);
+        renderUsers();
+        showToast("تم حذف المستخدم بنجاح");
+      }
+    });
   });
 
   renderTemplates();
@@ -561,11 +741,17 @@ $(async function () {
       $list.append(`
         <div class="list-item">
           <div class="li-main">
-            <div class="li-title">👨‍⚕️ ${escapeHtml(d.name)}</div>
+            <div class="li-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:4px;"><path d="M4.8 2.3A.3.3 0 0 0 4.5 2h-1a.3.3 0 0 0-.3.3v7.2a4.5 4.5 0 0 0 9 0V2.3a.3.3 0 0 0-.3-.3h-1a.3.3 0 0 0-.3.3v7.2a2.7 2.7 0 0 1-5.4 0V2.3z"/><path d="M8 13.7v3.8a2.5 2.5 0 0 0 5 0v-1"/><circle cx="18" cy="16" r="3"/></svg>
+              ${escapeHtml(d.name)}
+            </div>
             <div class="li-sub">${escapeHtml(d.title)}</div>
           </div>
           <div class="li-actions">
-            <button class="btn btn-danger btn-sm btn-del-doctor" data-id="${d.id}">حذف</button>
+            <button class="btn btn-danger btn-sm btn-del-doctor" data-id="${d.id}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              حذف
+            </button>
           </div>
         </div>
       `);
@@ -581,15 +767,26 @@ $(async function () {
     DB.Doctors.add({ name, title });
     this.reset();
     renderDoctors();
-    showToast("✔ تم إضافة الطبيب بنجاح");
+    showToast("تم إضافة الطبيب بنجاح");
   });
 
-  // --- حذف طبيب ---
+  // --- حذف طبيب (عبر بوب-أب التنبيه) ---
   $("#doctorsList").on("click", ".btn-del-doctor", function () {
     const id = $(this).data("id");
-    DB.Doctors.remove(id);
-    renderDoctors();
-    showToast("تم حذف الطبيب");
+    const d = DB.Doctors.get(id);
+    const dName = d ? d.name : "هذا الطبيب";
+
+    showConfirmPopup({
+      title: "حذف طبيب",
+      message: `هل أنت متأكد من حذف الطبيب "${dName}" من القائمة؟`,
+      confirmText: "حذف الطبيب",
+      type: "danger",
+      onConfirm: function () {
+        DB.Doctors.remove(id);
+        renderDoctors();
+        showToast("تم حذف الطبيب");
+      }
+    });
   });
 
   // --- حفظ اسم العيادة وإعدادات الطباعة ---
