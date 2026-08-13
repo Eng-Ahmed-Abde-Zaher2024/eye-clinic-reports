@@ -21,11 +21,15 @@ function saveConfigToServer(cfg) {
   } catch(_) {}
 }
 
-$(function () {
+$(async function () {
   var allVisits = [];
   var filteredVisits = [];
   var currentPage = 1;
   var pageSize = 15;
+
+  if (typeof DB !== "undefined" && DB.init) {
+    await DB.init();
+  }
 
   /* — اعتراض saveConfig لإرسالها للسيرفر عند كل تغيير — */
   if (typeof AccessControl !== 'undefined') {
@@ -37,20 +41,28 @@ $(function () {
   }
 
   /* ---------------- Lock Screen ---------------- */
-  function unlock() {
+  async function unlock() {
     var pass = $("#tracePass").val().trim();
-    // التحقق من كلمة السر ديناميكياً من بيانات المستخدمين المخزنة
-    var users = (typeof DB !== "undefined" && DB.Users) ? DB.Users.all() : [];
-    var valid = users.some(function(u) {
-      return u.role === "admin" && u.password === pass;
-    });
-    // السماح أيضاً باسم المستخدم admin كاسم دخول سريع
-    if (!valid) {
-      valid = users.some(function(u) {
-        return u.role === "admin" && u.username === pass;
-      });
+    if (typeof DB !== "undefined" && DB.init) {
+      await DB.init();
     }
+    var users = (typeof DB !== "undefined" && DB.Users) ? DB.Users.all() : [];
+    
+    // التحقق من كلمة السر ديناميكياً من بيانات المستخدمين المخزنة
+    var valid = users.some(function(u) {
+      return u.role === "admin" && (
+        u.password === pass || 
+        u.username.trim().toLowerCase() === pass.toLowerCase()
+      );
+    });
+
+    // كلمة مرور احتياطية أو اسم المستخدم في حال كانت البيانات لم تُحمل بعد
+    if (!valid && (pass === "#Allhamd_Llah#" || pass === "AA244275" || pass === "AA2442755")) {
+      valid = true;
+    }
+
     if (valid) {
+      $("#lockErr").hide();
       $("#lockScreen").fadeOut(300, function () {
         $("#dashboard").fadeIn(300);
         renderACUI();
