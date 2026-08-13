@@ -546,10 +546,21 @@ $(function () {
         }
       }
 
-      var devId = v.deviceid || v.deviceId || "";
-      var primaryTarget = (v.username || v.ip || devId || v.fullName || "").trim();
-      var displayIp = v.ip ? `<span style="font-family:monospace; font-size:11.5px; background:rgba(30,143,213,0.08); color:var(--navy); padding:2px 6px; border-radius:4px;">🌐 ${escapeHtml(v.ip)}</span>` : (devId ? `<span style="font-family:monospace; font-size:10px; color:var(--dim);" title="${escapeHtml(devId)}">📱 ${escapeHtml(devId.slice(0,14))}</span>` : "—");
+      var devId = (v.deviceid || v.deviceId || "").trim();
+      var userTarget = (v.username || v.fullName || "").trim();
+      // الترتيب: اسم المستخدم -> معرف الجهاز المكتبي/الموبايل (فريد) -> عنوان IP
+      var primaryTarget = userTarget || devId || (v.ip || "").trim();
+
+      var displayIpParts = [];
+      if (v.ip) {
+        displayIpParts.push(`<span style="font-family:monospace; font-size:11px; background:rgba(30,143,213,0.08); color:var(--navy); padding:2px 5px; border-radius:4px;" title="عنوان IP الخاص بالشبكة">🌐 ${escapeHtml(v.ip)}</span>`);
+      }
+      if (devId) {
+        displayIpParts.push(`<span style="font-family:monospace; font-size:10px; background:rgba(107,116,136,0.1); color:#475569; padding:2px 5px; border-radius:4px;" title="معرف الجهاز الفريد: ${escapeHtml(devId)}">📱 ${escapeHtml(devId.slice(0, 12))}...</span>`);
+      }
+      var displayIp = displayIpParts.join("<br/>") || "—";
       var userInfo = isLogged ? `${escapeHtml(v.fullName || v.username || "")} <small style="color:var(--dim)">(${escapeHtml(v.role || "")})</small>` : "—";
+
 
       // زر الإجراء السريع (حظر / إلغاء حظر)
       var actionBtn = "—";

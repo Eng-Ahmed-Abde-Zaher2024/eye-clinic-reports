@@ -184,11 +184,12 @@ const AccessControl = (() => {
   function checkAndEnforce() {
     if (/trace\.html/i.test(location.pathname)) return;
 
-    // رابط السكريبت — يقرأه من المتغير العام أو localStorage
+    var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
     var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
                      VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
                   ? VISITOR_SCRIPT_URL
-                  : (localStorage.getItem('eyeclinic_script_url') || '');
+                  : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
+
 
     if (scriptUrl) {
       // ① جلب الإعدادات من السيرفر (الأدمن يحدّثها من trace.html)
