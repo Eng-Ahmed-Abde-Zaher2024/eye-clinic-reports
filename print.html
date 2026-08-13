@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>إصدار تقرير — مركز الخبراء</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="js/vendor/jquery.min.js"></script>
+  <script src="js/theme.js"></script>
 </head>
 
 <body>
@@ -18,9 +20,9 @@
     <div class="topbar-nav">
       <a href="print.html" class="active">طباعة تقرير</a>
       <a href="admin.html" class="admin-only-link">لوحة الإدارة</a>
-      
     </div>
     <div class="topbar-right">
+      <button class="btn btn-outline btn-sm btn-theme-toggle" style="margin-left:8px;">Rose Eye</button>
       <span class="topbar-user-name"></span>
       <button class="btn btn-outline btn-sm btn-logout">خروج</button>
     </div>
@@ -91,35 +93,38 @@
         </div>
       </div>
     </div>
-  <footer class="site-footer no-print-hidden-on-print">
-    <div class="site-footer-inner">
-      <div class="site-footer-badge">
-        <svg class="footer-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-        </svg>
-        <span>تم بحمد الله</span>
+    <footer class="site-footer no-print-hidden-on-print">
+      <div class="site-footer-inner">
+        <div class="site-footer-badge">
+          <svg class="footer-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+            </path>
+          </svg>
+          <span>تم بحمد الله</span>
+        </div>
+
+        <div class="site-footer-divider"></div>
+
+        <div class="site-footer-dev">
+          <svg class="footer-icon-svg dev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>تم تطوير وإنشاء الموقع بواسطة <strong class="dev-name">البشمهندس أحمد عبد الظاهر</strong></span>
+        </div>
       </div>
+    </footer>
 
-      <div class="site-footer-divider"></div>
+    <div class="toast" id="toast"></div>
 
-      <div class="site-footer-dev">
-        <svg class="footer-icon-svg dev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"></polyline>
-          <polyline points="8 6 2 12 8 18"></polyline>
-        </svg>
-        <span>تم تطوير وإنشاء الموقع بواسطة <strong class="dev-name">البشمهندس أحمد عبد الظاهر</strong></span>
-      </div>
-    </div>
-  </footer>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="js/vendor/jquery.min.js"></script>
-  <script src="js/access_control.js"></script>
-  <script src="js/visitor.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/print.js"></script>
+    <script src="js/vendor/jquery.min.js"></script>
+    <script src="js/access_control.js"></script>
+    <script src="js/visitor.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/print.js"></script>
 </body>
 
 </html>

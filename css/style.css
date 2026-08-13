@@ -18,6 +18,167 @@
   --shadow: 0 10px 30px -12px rgba(18, 36, 94, 0.18);
 }
 
+/* ============================================================
+   Rose Chic Theme — Rose Eye الناعم (Soft Rose Card & Dark Wine Text)
+   ============================================================ */
+[data-theme="pink"] {
+  --navy: #be185d;
+  --navy-deep: #831843;
+  --blue: #ec4899;
+  --blue-light: #f472b6;
+  --orange: #f43f5e;
+  --coral: #e11d48;
+  --teal: #10b981;
+  --paper: #fff0f5;
+  --card: #fdeef0;
+  --line: #fbcfe8;
+  --text: #4c0519;
+  --text-dim: #831843;
+  --danger: #e11d48;
+  --shadow: 0 10px 30px -10px rgba(219, 39, 119, 0.18);
+}
+
+/* خلفية الكروت والمربعات باللون الوردي الناعم (مثل لون زر حذف #fdeef0) */
+[data-theme="pink"] .card,
+[data-theme="pink"] .login-card,
+[data-theme="pink"] .modal-box {
+  background: #fdeef0 !important;
+  color: #4c0519 !important;
+  border: 1.5px solid #fbcfe8 !important;
+  box-shadow: 0 10px 30px -10px rgba(219, 39, 119, 0.2) !important;
+}
+
+/* حاوية معاينة صفحة A4 بالفريم الوردي الجذاب */
+[data-theme="pink"] .page-preview-wrap {
+  background: #fbcfe8 !important;
+  border: 1.5px solid #f472b6 !important;
+}
+
+/* خلفية شريط العنوان (Topbar) باللون الوردي الناعم الناصع */
+[data-theme="pink"] .topbar {
+  background: linear-gradient(90deg, #fbcfe8, #fdeef0) !important;
+  color: #4c0519 !important;
+  border-bottom: 1.5px solid #f472b6 !important;
+}
+
+[data-theme="pink"] .topbar-clinic-name,
+[data-theme="pink"] .topbar-user-name,
+[data-theme="pink"] .topbar-nav a {
+  color: #4c0519 !important;
+}
+
+[data-theme="pink"] .topbar-nav a.active {
+  background: #be185d !important;
+  color: #ffffff !important;
+  border-radius: 8px;
+}
+
+/* العناوين والنصوص باللون العنابي الغامق القوي الواضح جداً بدلاً من الأبيض */
+[data-theme="pink"] .card h1,
+[data-theme="pink"] .card h2,
+[data-theme="pink"] .card h3,
+[data-theme="pink"] .card h4,
+[data-theme="pink"] .login-card h1,
+[data-theme="pink"] .modal-box h3,
+[data-theme="pink"] .field label,
+[data-theme="pink"] .page-head h2,
+[data-theme="pink"] .settings-section-title {
+  color: #4c0519 !important;
+}
+
+[data-theme="pink"] .card p,
+[data-theme="pink"] .card small,
+[data-theme="pink"] .login-card p.sub,
+[data-theme="pink"] .page-head p,
+[data-theme="pink"] .field-placeholder-note {
+  color: #831843 !important;
+}
+
+/* مدخلات النصوص بيضاء ناصعة مع نص عنابي غامق واضح */
+[data-theme="pink"] .field input,
+[data-theme="pink"] .field select,
+[data-theme="pink"] .field textarea {
+  background: #ffffff !important;
+  color: #4c0519 !important;
+  border: 1.5px solid #f472b6 !important;
+  font-weight: 600;
+}
+
+[data-theme="pink"] .field input:focus,
+[data-theme="pink"] .field select:focus,
+[data-theme="pink"] .field textarea:focus {
+  border-color: #be185d !important;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25) !important;
+}
+
+/* القوائم والعناصر داخل لوحة الإدارة */
+[data-theme="pink"] .list-item {
+  background: #ffffff !important;
+  border-color: #fbcfe8 !important;
+  color: #4c0519 !important;
+}
+
+[data-theme="pink"] .list-item .li-title {
+  color: #4c0519 !important;
+}
+
+[data-theme="pink"] .list-item .li-sub {
+  color: #831843 !important;
+}
+
+/* الأزرار الرئيسية باللون الوردي الصريح والنص الأبيض */
+[data-theme="pink"] .btn-primary {
+  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 8px 20px rgba(219, 39, 119, 0.35) !important;
+}
+
+[data-theme="pink"] .btn-primary:hover {
+  opacity: 0.92 !important;
+  transform: translateY(-1px);
+}
+
+[data-theme="pink"] .btn-outline {
+  background: #ffffff !important;
+  color: #be185d !important;
+  border-color: #f472b6 !important;
+}
+
+[data-theme="pink"] .btn-outline:hover {
+  background: #fdeef0 !important;
+  border-color: #be185d !important;
+}
+
+/* خيارات إعدادات الطباعة (Checkboxes) */
+[data-theme="pink"] .print-option-check {
+  background: #ffffff !important;
+  border-color: #f472b6 !important;
+}
+
+[data-theme="pink"] .print-option-check:hover,
+[data-theme="pink"] .print-option-check:has(input:checked) {
+  background: #ffe4e6 !important;
+  border-color: #be185d !important;
+}
+
+[data-theme="pink"] .check-label strong {
+  color: #4c0519 !important;
+}
+
+[data-theme="pink"] .check-label small {
+  color: #831843 !important;
+}
+
+[data-theme="pink"] .tab-btn {
+  color: #831843 !important;
+}
+
+[data-theme="pink"] .tab-btn.active {
+  color: #be185d !important;
+  border-bottom-color: #be185d !important;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -26,6 +187,9 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background-color: var(--paper);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
@@ -189,10 +353,13 @@ a {
 /* حقل التاريخ — كليندر */
 .field input[type="date"] {
   cursor: pointer;
-  direction: ltr;        /* الكليندر يعمل أفضل بـ LTR داخليًا */
-  text-align: right;     /* النص يبقى على اليمين */
+  direction: ltr;
+  /* الكليندر يعمل أفضل بـ LTR داخليًا */
+  text-align: right;
+  /* النص يبقى على اليمين */
   color-scheme: light;
 }
+
 .field input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.7;
   cursor: pointer;
@@ -918,6 +1085,7 @@ a {
   .site-footer-divider {
     display: none;
   }
+
   .site-footer-inner {
     flex-direction: column;
     gap: 10px;
@@ -974,7 +1142,9 @@ a {
   }
 
   /* hide/show elements based on print settings */
-  .hide-on-print { display: none !important; }
+  .hide-on-print {
+    display: none !important;
+  }
 }
 
 .hidden-always {
@@ -995,9 +1165,19 @@ a {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 /* ============================================================
@@ -1036,7 +1216,7 @@ a {
 .print-option-check:hover {
   border-color: var(--blue);
   background: #eaf5fd;
-  box-shadow: 0 2px 8px rgba(30,143,213,0.10);
+  box-shadow: 0 2px 8px rgba(30, 143, 213, 0.10);
 }
 
 /* hide native checkbox */
@@ -1079,21 +1259,21 @@ a {
 }
 
 /* checked state */
-.print-option-check input[type="checkbox"]:checked ~ .check-box-ui {
+.print-option-check input[type="checkbox"]:checked~.check-box-ui {
   border-color: var(--blue);
   background: var(--blue);
 }
 
-.print-option-check input[type="checkbox"]:checked ~ .check-box-ui::after {
+.print-option-check input[type="checkbox"]:checked~.check-box-ui::after {
   opacity: 1;
   transform: scale(1);
 }
 
-.print-option-check input[type="checkbox"]:checked ~ .check-label strong {
+.print-option-check input[type="checkbox"]:checked~.check-label strong {
   color: var(--blue);
 }
 
-.print-option-check input[type="checkbox"]:checked + .check-box-ui {
+.print-option-check input[type="checkbox"]:checked+.check-box-ui {
   border-color: var(--blue);
   background: var(--blue);
 }
