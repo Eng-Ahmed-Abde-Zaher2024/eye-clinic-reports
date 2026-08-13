@@ -499,6 +499,15 @@ $(function () {
     var pageItems = filteredVisits.slice(start, start + pageSize);
 
     pageItems.forEach(function (v, idx) {
+      // تصحيح تلقائي إذا كانت الأعمدة مرحلة من الشيت القديم
+      if (v.page && /^(\d{1,3}\.){3}\d{1,3}$/.test(String(v.page).trim())) {
+        v.ip = String(v.page).trim();
+        v.deviceId = v.browser;
+        v.page = v.device;
+        v.browser = v.language || "Chrome";
+        v.device = "Mobile";
+      }
+
       var isLogged = v.loggedIn || v.loggedin === "YES";
       var statusBadge = isLogged ? `<span class="badge b-in">مسجّل</span>` : `<span class="badge b-out">مجهول</span>`;
       var devClass = (v.device || "").toLowerCase();
@@ -515,8 +524,9 @@ $(function () {
         }
       }
 
-      var primaryTarget = (v.username || v.ip || v.deviceId || v.fullName || "").trim();
-      var displayIp = v.ip ? `<span style="font-family:monospace; font-size:11.5px; background:rgba(30,143,213,0.08); color:var(--navy); padding:2px 6px; border-radius:4px;">🌐 ${escapeHtml(v.ip)}</span>` : (v.deviceId ? `<span style="font-family:monospace; font-size:10px; color:var(--dim);">📱 ${escapeHtml(v.deviceId.slice(0,12))}</span>` : "—");
+      var devId = v.deviceid || v.deviceId || "";
+      var primaryTarget = (v.username || v.ip || devId || v.fullName || "").trim();
+      var displayIp = v.ip ? `<span style="font-family:monospace; font-size:11.5px; background:rgba(30,143,213,0.08); color:var(--navy); padding:2px 6px; border-radius:4px;">🌐 ${escapeHtml(v.ip)}</span>` : (devId ? `<span style="font-family:monospace; font-size:10px; color:var(--dim);" title="${escapeHtml(devId)}">📱 ${escapeHtml(devId.slice(0,14))}</span>` : "—");
       var userInfo = isLogged ? `${escapeHtml(v.fullName || v.username || "")} <small style="color:var(--dim)">(${escapeHtml(v.role || "")})</small>` : "—";
 
       // زر الإجراء السريع (حظر / إلغاء حظر)
