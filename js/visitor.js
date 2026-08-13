@@ -59,7 +59,7 @@ var VISITOR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQU
     return {
       id:        Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       timestamp: new Date().toISOString(),
-      ip:        ip || localStorage.getItem('eyeclinic_last_ip') || '',
+      ip:        ip || '',
       deviceId:  getDeviceId(),
       page:      getPage(),
       browser:   detectBrowser(ua),
@@ -80,11 +80,11 @@ var VISITOR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQU
     try {
       fetch(VISITOR_SCRIPT_URL, {
         method:  'POST',
-        mode:    'no-cors',   // بدون CORS — الرسالة تصل لكن لا نقرأ الرد
+        mode:    'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body:    JSON.stringify(entry)
       });
-    } catch (_) { /* فشل بصمت */ }
+    } catch (_) {}
   }
 
   /* ---------- حفظ احتياطي في localStorage ---------- */
@@ -99,28 +99,45 @@ var VISITOR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQU
     } catch (_) {}
   }
 
+  /* ---------- جلب IP بالتوازي من 3 خدمات + timeout 4 ثواني ---------- */
+  function fetchIpBackground(onDone) {
+    var resolved = false;
+    var timer    = setTimeout(function () {
+      if (!resolved) { resolved = true; onDone(''); }
+    }, 4000);
+
+    var APIs = [
+      { url: 'https://api.ipify.org?format=json',   key: 'ip'  },
+      { url: 'https://api4.my-ip.io/ip.json',        key: 'ip'  },
+      { url: 'https://api.ip.sb/geoip',              key: 'ip'  }
+    ];
+
+    APIs.forEach(function (api) {
+      fetch(api.url)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!resolved && d && d[api.key] && /^[\d.]+$/.test(d[api.key])) {
+            resolved = true;
+            clearTimeout(timer);
+            onDone(d[api.key]);
+          }
+        })
+        .catch(function () {});
+    });
+  }
+
   /* ---------- تسجيل الزيارة ---------- */
   function record() {
-    // جلب عنوان IP بصمت
-    fetch('https://api.ipify.org?format=json')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data && data.ip) {
-          localStorage.setItem('eyeclinic_last_ip', data.ip);
-          var entry = buildEntry(data.ip);
-          sendToSheets(entry);
-          saveLocal(entry);
-        } else {
-          var entryFallback = buildEntry('');
-          sendToSheets(entryFallback);
-          saveLocal(entryFallback);
-        }
-      })
-      .catch(function() {
-        var entryFallback = buildEntry('');
-        sendToSheets(entryFallback);
-        saveLocal(entryFallback);
-      });
+    // ① إرسال فوري بـ IP محفوظ من زيارة سابقة (بدون أي انتظار)
+    var cachedIp = localStorage.getItem('eyeclinic_last_ip') || '';
+    var entry    = buildEntry(cachedIp);
+    sendToSheets(entry);
+    saveLocal(entry);
+
+    // ② جلب IP جديد في الخلفية → حفظه فقط للزيارة القادمة
+    fetchIpBackground(function (freshIp) {
+      if (freshIp) localStorage.setItem('eyeclinic_last_ip', freshIp);
+    });
   }
 
   if (document.readyState === 'loading') {
@@ -129,3 +146,5 @@ var VISITOR_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQU
     record();
   }
 })();
+
+
