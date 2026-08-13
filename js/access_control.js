@@ -192,6 +192,39 @@ const AccessControl = (() => {
   }
 
 
+  function removeBlockScreen() {
+    var overlay = document.getElementById('accessBlockOverlay');
+    if (overlay) {
+      overlay.parentNode.removeChild(overlay);
+      document.body.style.overflow = '';
+    }
+  }
+
+  function fetchAndSync(onDone) {
+    var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
+    var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
+                     VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
+                  ? VISITOR_SCRIPT_URL
+                  : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
+
+    if (!scriptUrl) return;
+
+    fetch(scriptUrl + '?action=getConfig&t=' + Date.now())
+      .then(function(r) { return r.text(); })
+      .then(function(text) {
+        try {
+          var serverCfg = JSON.parse(text);
+          if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
+            saveConfig(serverCfg);
+          }
+        } catch (_) {}
+        if (onDone) onDone();
+      })
+      .catch(function () {
+        if (onDone) onDone();
+      });
+  }
+
   function checkAndEnforce() {
     if (/trace\.html/i.test(location.pathname)) return;
 
@@ -201,39 +234,39 @@ const AccessControl = (() => {
     // ======================================================
     if (isBlocked()) {
       renderBlockScreen();
-      // لا حاجة لجلب السيرفر — الحظر مؤكد
-      return;
     }
 
     // ======================================================
-    // ② إذا لم يكن محظوراً محلياً → اجلب السيرفر في الخلفية
-    //    لتحديث الإعدادات (قد يكون الأدمن أضاف حظراً جديداً)
+    // ② دائماً اجلب السيرفر في الخلفية بغض النظر عن الحالة المحلية
+    //    حتى لو كان محظوراً محلياً — ربما رُفع الحظر من السيرفر
     // ======================================================
-    var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
-    var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
-                     VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
-                  ? VISITOR_SCRIPT_URL
-                  : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
-
-    if (!scriptUrl) return;
-
-    fetch(scriptUrl + '?action=getConfig')
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        try {
-          var serverCfg = JSON.parse(text);
-          if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
-            // حفظ الإعدادات الجديدة محلياً
-            saveConfig(serverCfg);
-          }
-        } catch (_) {}
-        // الآن تحقق مجدداً بعد تحديث الإعدادات من السيرفر
-        if (isBlocked()) renderBlockScreen();
-      })
-      .catch(function () {
-        // إذا فشل الجلب — الإعدادات المحلية كافية (تم فحصها أعلاه)
-      });
+    fetchAndSync(function() {
+      if (isBlocked()) {
+        // لا يزال محظوراً بعد تحديث السيرفر
+        renderBlockScreen();
+      } else {
+        // رُفع الحظر من السيرفر → أزل شاشة الحجب فوراً
+        removeBlockScreen();
+      }
+    });
   }
+
+  // ======================================================
+  // ③ فحص دوري سريع كل 15 ثانية
+  //    يضمن استجابة سريعة لأي تغيير حظر/رفع حظر
+  // ======================================================
+  (function startPeriodicCheck() {
+    if (/trace\.html/i.test(location.pathname)) return;
+    setInterval(function() {
+      fetchAndSync(function() {
+        if (isBlocked()) {
+          renderBlockScreen();
+        } else {
+          removeBlockScreen();
+        }
+      });
+    }, 15000); // كل 15 ثانية
+  })();
 
   // تشغيل الفحص تلقائياً
   checkAndEnforce();
@@ -243,6 +276,7 @@ const AccessControl = (() => {
     saveConfig,
     isBlocked,
     getClientIdentifiers,
-    renderBlockScreen
+    renderBlockScreen,
+    removeBlockScreen
   };
 })();
