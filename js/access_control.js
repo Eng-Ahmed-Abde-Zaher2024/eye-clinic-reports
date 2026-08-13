@@ -194,18 +194,22 @@ const AccessControl = (() => {
     if (scriptUrl) {
       // ① جلب الإعدادات من السيرفر (الأدمن يحدّثها من trace.html)
       fetch(scriptUrl + '?action=getConfig')
-        .then(function(r) { return r.json(); })
-        .then(function(serverCfg) {
-          if (serverCfg && typeof serverCfg === 'object') {
-            // السيرفر هو المرجع — يُحدَّث localStorage تلقائياً
-            saveConfig(serverCfg);
-          }
+        .then(function(r) { return r.text(); })
+        .then(function(text) {
+          try {
+            var serverCfg = JSON.parse(text);
+            if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
+              // السيرفر هو المرجع — يُحدَّث localStorage تلقائياً
+              saveConfig(serverCfg);
+            }
+          } catch (_) {}
           if (isBlocked()) renderBlockScreen();
         })
         .catch(function () {
           // إذا فشل الجلب — استخدم الإعدادات المحلية الاحتياطية
           if (isBlocked()) renderBlockScreen();
         });
+
     } else {
       // لا يوجد رابط → استخدم localStorage فقط
       if (isBlocked()) renderBlockScreen();

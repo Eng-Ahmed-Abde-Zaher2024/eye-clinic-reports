@@ -66,7 +66,9 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
       timestamp: new Date().toISOString(),
       ip:        ip || '',
       deviceId:  getDeviceId(),
+      deviceid:  getDeviceId(),
       page:      getPage(),
+
       browser:   detectBrowser(ua),
       device:    detectDevice(ua),
       language:  navigator.language || '',
