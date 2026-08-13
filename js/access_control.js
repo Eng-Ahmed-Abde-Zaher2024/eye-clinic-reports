@@ -62,26 +62,27 @@ const AccessControl = (() => {
   }
 
   function isBlocked() {
-    // صفحة التتبع trace.html مستثناة حتى لا يُحظر المدير من إدارة الحظر
     if (/trace\.html/i.test(location.pathname)) return false;
 
     const cfg = getConfig();
-    if (!cfg.enabled) return false;
+    if (!cfg || cfg.enabled === false) return false;
 
-    const identifiers = getClientIdentifiers();
+    const identifiers = getClientIdentifiers().map(i => String(i).toLowerCase().trim());
+    if (identifiers.length === 0) return false;
 
     if (cfg.mode === 'blacklist') {
-      // إذا كان أي معرف للعميل موجوداً في القائمة السوداء -> محظور
-      return identifiers.some(id => cfg.blacklist.map(b => b.toLowerCase().trim()).includes(id));
+      const bList = (cfg.blacklist || []).map(b => String(b).toLowerCase().trim());
+      return identifiers.some(id => bList.includes(id));
     } else if (cfg.mode === 'whitelist') {
-      // إذا لم يكن أي معرف موجوداً في القائمة البيضاء -> محظور
-      return !identifiers.some(id => cfg.whitelist.map(w => w.toLowerCase().trim()).includes(id));
+      const wList = (cfg.whitelist || []).map(w => String(w).toLowerCase().trim());
+      return !identifiers.some(id => wList.includes(id));
     }
 
     return false;
   }
 
   function renderBlockScreen() {
+    if (document.getElementById('accessBlockOverlay')) return;
     const cfg = getConfig();
     
     // إنشاء الحاوية الخاصة بشاشة المنع
@@ -127,7 +128,7 @@ const AccessControl = (() => {
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <span style="font-size:13px; color:#63c4ee; font-weight:700;">💳 قيمة الاشتراك الشهري:</span>
             <span style="background:#f5820c; color:#fff; font-weight:800; padding:4px 12px; border-radius:20px; font-size:13px;">
-              ${cfg.priceText}
+              ${cfg.priceText || '100 ج.م شهرياً عبر انستا باي (InstaPay)'}
             </span>
           </div>
 
@@ -146,7 +147,7 @@ const AccessControl = (() => {
             font-family: monospace;
             user-select: all;
           ">
-            ${cfg.subscriptionPhone}
+            ${cfg.subscriptionPhone || '01126611570'}
           </div>
           <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:8px; text-align:center;">
             (اضغط على الرقم لنسخه)
@@ -154,10 +155,10 @@ const AccessControl = (() => {
         </div>
 
         <p style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:20px;">
-          📌 ${cfg.customNotice}
+          📌 ${cfg.customNotice || 'تواصل مع إدارة النظام لتفعيل حسابك بعد التحويل.'}
         </p>
 
-        <a href="https://wa.me/2${cfg.subscriptionPhone}" target="_blank" style="
+        <a href="https://wa.me/2${cfg.subscriptionPhone || '01126611570'}" target="_blank" style="
           display: inline-flex; align-items: center; justify-content: center; gap: 8px;
           width: 100%; padding: 14px;
           background: #25D366; color: #fff; text-decoration: none;
@@ -176,10 +177,20 @@ const AccessControl = (() => {
       </style>
     `;
 
-    document.body.appendChild(overlay);
-    // تعطيل التمرير وتدمير التفاعلات
-    document.body.style.overflow = 'hidden';
+    function mount() {
+      if (document.body && !document.getElementById('accessBlockOverlay')) {
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mount);
+    } else {
+      mount();
+    }
   }
+
 
   function checkAndEnforce() {
     if (/trace\.html/i.test(location.pathname)) return;
