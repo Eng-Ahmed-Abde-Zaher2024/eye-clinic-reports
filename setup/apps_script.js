@@ -1,5 +1,5 @@
 // ============================================================
-//   apps_script.js — كود Google Apps Script v2.1
+//   apps_script.js — كود Google Apps Script v2.3
 //   انسخ هذا الكود كاملاً في Google Apps Script
 //   ثم: Deploy > Manage deployments > تعديل > إصدار جديد > نشر
 // ============================================================
@@ -7,27 +7,28 @@
 var SHEET_NAME = 'Visits';
 var MAX_ROWS   = 5000;
 
+var HEADERS = [
+  'ID','Timestamp','Page','Browser','Device',
+  'Language','Screen','Referrer','LoggedIn',
+  'Username','FullName','Role','IP','DeviceID','DeviceName'
+];
+
 /* ---- إصلاح / إنشاء رأس الجدول تلقائياً ---- */
 function ensureHeaders(sheet) {
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      'ID','Timestamp','Page','Browser','Device',
-      'Language','Screen','Referrer','LoggedIn',
-      'Username','FullName','Role','IP','DeviceID'
-    ]);
-    sheet.getRange(1, 1, 1, 14).setFontWeight('bold');
+    sheet.appendRow(HEADERS);
+    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
     return;
   }
-  // شيت موجود — فحص إذا كان عمود IP مفقود (إصدار قديم)
   var lastCol    = sheet.getLastColumn();
-  var headerVals = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var headerVals = sheet.getRange(1, 1, 1, Math.max(lastCol, HEADERS.length)).getValues()[0];
   var headerLow  = headerVals.map(function(h) { return String(h).toLowerCase().trim(); });
-  if (headerLow.indexOf('ip') === -1) {
-    sheet.getRange(1, 13).setValue('IP');
-    sheet.getRange(1, 14).setValue('DeviceID');
-    sheet.getRange(1, 1, 1, 14).setFontWeight('bold');
-  }
+
+  if (headerLow.indexOf('ip') === -1) sheet.getRange(1, 13).setValue('IP');
+  if (headerLow.indexOf('deviceid') === -1) sheet.getRange(1, 14).setValue('DeviceID');
+  if (headerLow.indexOf('devicename') === -1) sheet.getRange(1, 15).setValue('DeviceName');
+  sheet.getRange(1, 1, 1, Math.max(lastCol, 15)).setFontWeight('bold');
 }
 
 /* ---- حفظ إعدادات الحظر/السماح في الشيت (POST saveConfig) ---- */
@@ -72,9 +73,13 @@ function doPost(e) {
       data.username  || '',
       data.fullName  || '',
       data.role      || '',
-      data.ip        || '',
-      data.deviceId  || ''
+      data.ip        || data.IP || '',
+      data.deviceId  || data.deviceid || data.DeviceID || '',
+      data.deviceName|| data.devicename || ''
     ]);
+
+
+
 
     // حذف الصفوف القديمة إذا تجاوزنا الحد
     var total = sheet.getLastRow();
@@ -154,6 +159,7 @@ function doGet(e) {
   }
 
   return ContentService
-    .createTextOutput('Eye Clinic Visitor Tracker v2.1')
+    .createTextOutput('Eye Clinic Visitor Tracker v2.3')
     .setMimeType(ContentService.MimeType.TEXT);
 }
+

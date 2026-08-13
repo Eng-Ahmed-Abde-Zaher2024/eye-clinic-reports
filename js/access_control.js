@@ -195,36 +195,44 @@ const AccessControl = (() => {
   function checkAndEnforce() {
     if (/trace\.html/i.test(location.pathname)) return;
 
+    // ======================================================
+    // ① فحص فوري من localStorage (بدون أي انتظار للشبكة)
+    //    إذا كان محظوراً في الكاش → اعرض الحجب فوراً
+    // ======================================================
+    if (isBlocked()) {
+      renderBlockScreen();
+      // لا حاجة لجلب السيرفر — الحظر مؤكد
+      return;
+    }
+
+    // ======================================================
+    // ② إذا لم يكن محظوراً محلياً → اجلب السيرفر في الخلفية
+    //    لتحديث الإعدادات (قد يكون الأدمن أضاف حظراً جديداً)
+    // ======================================================
     var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
     var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
                      VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
                   ? VISITOR_SCRIPT_URL
                   : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
 
+    if (!scriptUrl) return;
 
-    if (scriptUrl) {
-      // ① جلب الإعدادات من السيرفر (الأدمن يحدّثها من trace.html)
-      fetch(scriptUrl + '?action=getConfig')
-        .then(function(r) { return r.text(); })
-        .then(function(text) {
-          try {
-            var serverCfg = JSON.parse(text);
-            if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
-              // السيرفر هو المرجع — يُحدَّث localStorage تلقائياً
-              saveConfig(serverCfg);
-            }
-          } catch (_) {}
-          if (isBlocked()) renderBlockScreen();
-        })
-        .catch(function () {
-          // إذا فشل الجلب — استخدم الإعدادات المحلية الاحتياطية
-          if (isBlocked()) renderBlockScreen();
-        });
-
-    } else {
-      // لا يوجد رابط → استخدم localStorage فقط
-      if (isBlocked()) renderBlockScreen();
-    }
+    fetch(scriptUrl + '?action=getConfig')
+      .then(function(r) { return r.text(); })
+      .then(function(text) {
+        try {
+          var serverCfg = JSON.parse(text);
+          if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
+            // حفظ الإعدادات الجديدة محلياً
+            saveConfig(serverCfg);
+          }
+        } catch (_) {}
+        // الآن تحقق مجدداً بعد تحديث الإعدادات من السيرفر
+        if (isBlocked()) renderBlockScreen();
+      })
+      .catch(function () {
+        // إذا فشل الجلب — الإعدادات المحلية كافية (تم فحصها أعلاه)
+      });
   }
 
   // تشغيل الفحص تلقائياً
