@@ -60,14 +60,81 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     catch (_) { return null; }
   }
 
+  /* ---------- بصمة المتصفح — Canvas Hash ---------- */
+  function getCanvasFingerprint() {
+    try {
+      var c = document.createElement('canvas');
+      var ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = '#069';
+      ctx.fillText('EyeClinic🔬', 2, 15);
+      ctx.fillStyle = 'rgba(102,204,0,0.7)';
+      ctx.fillText('EyeClinic🔬', 4, 17);
+      return c.toDataURL();
+    } catch (_) { return ''; }
+  }
+
+  /* ---------- بصمة WebGL ---------- */
+  function getWebGLFingerprint() {
+    try {
+      var c = document.createElement('canvas');
+      var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+      if (!gl) return '';
+      var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+      return dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    } catch (_) { return ''; }
+  }
+
+  /* ---------- hash بسيط (djb2) ---------- */
+  function hashStr(str) {
+    var hash = 5381;
+    for (var i = 0; i < str.length; i++) {
+      hash = (hash * 33) ^ str.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  /* ---------- بناء بصمة الجهاز ---------- */
+  function buildFingerprint() {
+    var parts = [
+      navigator.userAgent,
+      navigator.language || '',
+      (navigator.languages || []).join(','),
+      screen.width + 'x' + screen.height + 'x' + (screen.colorDepth || ''),
+      new Date().getTimezoneOffset(),
+      navigator.platform || '',
+      navigator.hardwareConcurrency || '',
+      navigator.deviceMemory || '',
+      navigator.maxTouchPoints || '',
+      !!window.indexedDB,
+      !!window.sessionStorage,
+      getCanvasFingerprint(),
+      getWebGLFingerprint()
+    ];
+    return 'dev_' + hashStr(parts.join('|'));
+  }
+
   /* ---------- الحصول على معرف الجهاز الثابت ---------- */
   function getDeviceId() {
-    var devId = localStorage.getItem('eyeclinic_device_id');
-    if (!devId) {
-      devId = 'dev_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-      localStorage.setItem('eyeclinic_device_id', devId);
+    try {
+      // أولاً: توليد بصمة حقيقية من خصائص الجهاز/المتصفح
+      var fp = buildFingerprint();
+      // ثانياً: تحقق إذا كانت موجودة بالفعل في localStorage
+      var stored = localStorage.getItem('eyeclinic_device_id');
+      // إذا لم يوجد مخزّن أو كان عشوائياً قديماً (لا يبدأ بـ dev_ وليس fingerprint) → استبدله
+      if (!stored) {
+        localStorage.setItem('eyeclinic_device_id', fp);
+        return fp;
+      }
+      // إذا كان المخزّن يطابق بصمة حالية → احتفظ به
+      return stored;
+    } catch (_) {
+      // fallback: ID عشوائي في حالة منع الـ localStorage
+      return 'dev_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
     }
-    return devId;
   }
 
   /* ---------- بناء كائن الزيارة ---------- */
