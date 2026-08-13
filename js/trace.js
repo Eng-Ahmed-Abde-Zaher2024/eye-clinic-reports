@@ -625,7 +625,24 @@ $(function () {
     allVisits = [];
     applyFilters();
     $("#confirmOverlay").removeClass("open");
-    alert("تم مسح سجل الزيارات المحلي بنجاح.");
+
+    if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+      var clearUrl = APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=clear";
+      $.ajax({
+        url: clearUrl,
+        type: "GET",
+        dataType: "json",
+        success: function () {
+          alert("تم مسح جميع الزيارات من Google Sheets والمحلي بنجاح.");
+          loadVisits();
+        },
+        error: function () {
+          alert("تم مسح السجل المحلي بنجاح (ملاحظة: يمكنك إفراغ الصفوف يدوياً من ملف Google Sheet أيضاً).");
+        }
+      });
+    } else {
+      alert("تم مسح سجل الزيارات المحلي بنجاح.");
+    }
   });
 
   function escapeHtml(str) {
