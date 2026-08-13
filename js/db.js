@@ -37,15 +37,9 @@ const DB = (() => {
       return;
     }
 
-    // إذا كانت البيانات موجودة بالفعل في localStorage فلا نقوم بالاستبدال من جيت هب حتى لا تمحى تعديلات المستخدم
     const needDoctors = !localStorage.getItem(KEYS.doctors);
     const needTemplates = !localStorage.getItem(KEYS.templates);
     const needClinic = !localStorage.getItem(KEYS.clinic);
-    const needUsers = !localStorage.getItem(KEYS.users);
-
-    if (!needDoctors && !needTemplates && !needClinic && !needUsers) {
-      return;
-    }
 
     try {
       const fetchJson = (url) => fetch(url + "?t=" + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -54,13 +48,22 @@ const DB = (() => {
         needDoctors ? fetchJson("data/doctors.json") : null,
         needTemplates ? fetchJson("data/templates.json") : null,
         needClinic ? fetchJson("data/clinic.json") : null,
-        needUsers ? fetchJson("data/users.json") : null
+        fetchJson("data/users.json") // دائما يجلب users.json لضمان تطبيق أي تعديل في الملف
       ]);
 
       if (needDoctors && doctors && Array.isArray(doctors) && doctors.length > 0) write(KEYS.doctors, doctors);
       if (needTemplates && templates && Array.isArray(templates) && templates.length > 0) write(KEYS.templates, templates);
       if (needClinic && clinic && typeof clinic === "object") write(KEYS.clinic, clinic);
-      if (needUsers && users && Array.isArray(users) && users.length > 0) write(KEYS.users, users);
+      if (users && Array.isArray(users) && users.length > 0) {
+        write(KEYS.users, users);
+        // فحص الجلسة فوراً بعد تحديث المستخدمين من السيرفر/جيت هب
+        if (Session.current() && !Session.isValid()) {
+          Session.logout();
+          if (!/index\.html/i.test(window.location.pathname) && window.location.pathname !== "/") {
+            window.location.href = "index.html?reason=pwd_changed";
+          }
+        }
+      }
     } catch (e) {
       console.warn("لم يتم التمكن من قراءة ملفات JSON الحية، الاعتماد على التخزين المحلي", e);
     }
@@ -438,8 +441,8 @@ const DB = (() => {
   function seed() {
     if (!localStorage.getItem(KEYS.users)) {
       write(KEYS.users, [
-        { id: uid("u"), username: "admin", password: "Admin@123", fullName: "مدير النظام", role: "admin" },
-        { id: uid("u"), username: "agent", password: "Agent@123", fullName: "موظف الاستقبال", role: "agent" }
+        { id: "u_msrpzdxnbwkxt", username: "AA244275", password: "#Allhamd_Llah#", fullName: "مدير النظام", role: "admin" },
+        { id: "u_msrpzdxn1ct7b", username: "agent", password: "Agent@123", fullName: "موظف الاستقبال", role: "agent" }
       ]);
     }
     const currentTemplates = read(KEYS.templates, []);
@@ -522,10 +525,22 @@ const DB = (() => {
         username: user.username,
         fullName: user.fullName,
         role: user.role,
+        pwdSnapshot: user.password,
         loginAt: new Date().toISOString()
       });
     },
     current() { return read(KEYS.session, null); },
+    isValid() {
+      const session = this.current();
+      if (!session || !session.username) return false;
+      const user = Users.findByUsername(session.username);
+      if (!user) return false;
+      // إذا كانت الجلسة تخزن اللقطة لكلمة المرور وتم تغييرها فجأة في users.json -> الجلسة غير صالحة
+      if (session.pwdSnapshot !== undefined && session.pwdSnapshot !== user.password) {
+        return false;
+      }
+      return true;
+    },
     logout() { localStorage.removeItem(KEYS.session); }
   };
 
@@ -575,8 +590,30 @@ const DB = (() => {
     setTimeout(() => downloadJsonFile("users.json", Users.all()), 900);
   }
 
+  // ---------------------- فحص المباشر للتغييرات من جيت هب بدون ريفرش ----------------------
+  async function checkRemoteUsers() {
+    if (window.location.protocol === "file:") return false;
+    try {
+      const r = await fetch("data/users.json?t=" + Date.now());
+      if (!r.ok) return false;
+      const users = await r.json();
+      if (Array.isArray(users) && users.length > 0) {
+        write(KEYS.users, users);
+        if (Session.current() && !Session.isValid()) {
+          Session.logout();
+          if (!/index\.html/i.test(window.location.pathname) && window.location.pathname !== "/") {
+            window.location.href = "index.html?reason=pwd_changed";
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
   return {
     init: loadJsonFiles,
+    checkRemoteUsers,
     Users,
     Templates,
     Session,

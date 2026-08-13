@@ -687,10 +687,10 @@ $(async function () {
 
     DB.Users.update(id, { fullName, username, password, role });
 
-    // إذا كان الحساب الذي تم تعديله هو حساب الجلسة الحالية -> تحديث البيانات "لتسمع" في الهيدر والنافبار فورياً
+    // إذا كان الحساب الذي تم تعديله هو حساب الجلسة الحالية -> تحديث البيانات "لتسمع" في الهيدر والنافبار فورياً وتحديث لقطة كلمة المرور
     const currentSession = DB.Session.current();
-    if (currentSession && currentSession.userId === id) {
-      DB.Session.login({ id, username, fullName, role });
+    if (currentSession && (currentSession.userId === id || (currentSession.username && currentSession.username.toLowerCase() === username.toLowerCase()))) {
+      DB.Session.login({ id, username, fullName, role, password });
       $("#topbarUserName").text(fullName);
       $("#drawerUserName").text(fullName);
       $("#drawerUserRole").text(role === "admin" ? "مدير النظام" : "موظف استقبال");
@@ -700,7 +700,7 @@ $(async function () {
 
     $("#userEditModal").removeClass("show");
     renderUsers();
-    showToast("تم تحديث بيانات المستخدم بنجاح");
+    showToast("تم تحديث بيانات المستخدم بنجاح. تذكر تصدير users.json ورفعه لـ GitHub لتنفيذه على باقي الأجهزة.");
   });
 
   // --- حذف مستخدم (عبر بوب-أب التنبيه) ---

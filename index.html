@@ -36,9 +36,7 @@
       </form>
 
       <div class="hint-box">
-        بيانات الدخول الافتراضية (يفضّل تغييرها من صفحة الإدارة):<br />
-        <b>مدير:</b> admin / Admin@123<br />
-        <b>موظف استقبال:</b> agent / Agent@123
+        يرجى إدخال اسم المستخدم وكلمة المرور الخاصة بحسابك (يمكن تعديل البيانات من لوحة الإدارة).
       </div>
     </div>
   </div>
@@ -71,19 +69,38 @@
   <script src="js/db.js"></script>
   <script src="js/visitor.js"></script>
   <script>
-    // لو المستخدم مسجل دخوله بالفعل، حوّله مباشرة
-    if (DB.Session.current()) {
-      window.location.href = "print.html";
-    }
+    $(async function () {
+      // إظهار رسالة التنبيه إن وجدت في الرابط
+      const urlParams = new URLSearchParams(window.location.search);
+      const reason = urlParams.get("reason");
+      if (reason === "pwd_changed") {
+        $("#loginError").text("🔒 تم تغيير كلمة المرور أو تحديث بيانات الحساب. يرجى إدخال كلمة المرور الجديدة.").show();
+      } else if (reason === "expired") {
+        $("#loginError").text("⚠️ انتهت صلاحية الجلسة أو تم تعديل الحساب. يرجى تسجيل الدخول مجدداً.").show();
+      }
 
-    $("#loginForm").on("submit", function (e) {
+      // مزامنة أحدث بيانات المستخدمين من data/users.json
+      await DB.init();
+
+      // لو المستخدم مسجل دخوله والجلسة صالحة بكلمة المرور الحالية، حوّله مباشرة
+      if (DB.Session.isValid()) {
+        window.location.href = "print.html";
+      } else if (DB.Session.current()) {
+        // جلسة غير صالحة (تم تغيير كلمة المرور في users.json) -> تنظيف التخزين المحلّي
+        DB.Session.logout();
+      }
+    });
+
+    $("#loginForm").on("submit", async function (e) {
       e.preventDefault();
+      await DB.init();
+      
       const username = $("#username").val().trim();
       const password = $("#password").val();
       const user = DB.Users.findByUsername(username);
 
       if (!user || user.password !== password) {
-        $("#loginError").show();
+        $("#loginError").text("اسم المستخدم أو كلمة المرور غير صحيحة").show();
         return;
       }
       $("#loginError").hide();

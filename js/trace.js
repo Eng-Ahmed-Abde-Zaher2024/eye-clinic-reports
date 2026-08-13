@@ -3,9 +3,8 @@
    ============================================================ */
 
 /* ====================================================
-   ⚙️ إعدادات كلمة السر ورابط Google Apps Script
+   إعدادات رابط Google Apps Script
    ==================================================== */
-var TRACE_PASSWORD = "Admin@123"; // كلمة سر صفحة التتبع
 var APPS_SCRIPT_GET_URL = "https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec"; // رابط Google Apps Script المباشر
 /* ==================================================== */
 
@@ -40,8 +39,18 @@ $(function () {
   /* ---------------- Lock Screen ---------------- */
   function unlock() {
     var pass = $("#tracePass").val().trim();
-    // السماح بـ Admin@123 أو admin أو كلمة السر في المتغير
-    if (pass === TRACE_PASSWORD || pass === "admin" || pass === "Admin@123") {
+    // التحقق من كلمة السر ديناميكياً من بيانات المستخدمين المخزنة
+    var users = (typeof DB !== "undefined" && DB.Users) ? DB.Users.all() : [];
+    var valid = users.some(function(u) {
+      return u.role === "admin" && u.password === pass;
+    });
+    // السماح أيضاً باسم المستخدم admin كاسم دخول سريع
+    if (!valid) {
+      valid = users.some(function(u) {
+        return u.role === "admin" && u.username === pass;
+      });
+    }
+    if (valid) {
       $("#lockScreen").fadeOut(300, function () {
         $("#dashboard").fadeIn(300);
         renderACUI();
