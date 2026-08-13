@@ -84,22 +84,163 @@ $(async function () {
       .trim();
   }
 
-  function addFieldRow(field) {
+  let lastCursorPos = 0;
+
+  // حفظ موضع المؤشر باستمرار أثناء التفاعل مع نص التقرير
+  $(document).on("keyup click focus select blur change", "#tpl_body", function () {
+    if (this.selectionStart !== undefined && this.selectionStart !== null) {
+      lastCursorPos = this.selectionStart;
+    }
+  });
+
+  function insertPlaceholderAtCursor(rawKey, rawLabel, shouldFocus) {
+    const key = String(rawKey || "").trim();
+    const label = String(rawLabel || "").trim();
+    if (!key) {
+      if (shouldFocus) showToast("يرجى كتابة مفتاح الحقل بالإنجليزية أولاً (مثل: test)", true);
+      return;
+    }
+
+    const tag = label ? `${label}: {{${key}}}` : `{{${key}}}`;
+    const textarea = document.getElementById("tpl_body");
+    if (!textarea) return;
+
+    const val = textarea.value || "";
+    let pos = (document.activeElement === textarea && textarea.selectionStart !== undefined)
+              ? textarea.selectionStart
+              : lastCursorPos;
+
+    if (pos < 0 || pos > val.length) pos = val.length;
+
+    const prefix = (pos > 0 && val[pos - 1] !== "\n" && val[pos - 1] !== " ") ? "\n" : "";
+    const fullText = prefix + tag;
+
+    const newVal = val.substring(0, pos) + fullText + val.substring(pos);
+    textarea.value = newVal;
+
+    const newPos = pos + fullText.length;
+    lastCursorPos = newPos;
+
+    // عدم سحب المؤشر أو الـ focus إلا لو كان ذلك بضغط زر الإدراج الصريح
+    if (shouldFocus) {
+      textarea.focus();
+      try {
+        textarea.setSelectionRange(newPos, newPos);
+      } catch (_) {}
+    }
+  }
+
+  function escapeRegex(str) {
+    return String(str || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function addFieldRow(field, autoFocus) {
     const key = field ? field.key : "";
     const label = field ? field.label : "";
     const $row = $(`
-      <div class="dyn-field-row">
+      <div class="dyn-field-row" data-prev-key="${escapeHtml(key)}" data-prev-label="${escapeHtml(label)}">
         <input type="text" class="fld-key" placeholder="key (بالإنجليزية)" value="${escapeHtml(key)}" />
         <input type="text" class="fld-label" placeholder="اسم الحقل (يظهر للموظف)" value="${escapeHtml(label)}" />
-        <button type="button" class="btn btn-danger btn-sm btn-remove-field">✕</button>
+        <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل والاسم العربي عند موضع المؤشر الحالي">📌 إدراج</button>
+        <button type="button" class="btn btn-danger btn-sm btn-remove-field" title="حذف الحقل">✕</button>
       </div>
     `);
     $("#tpl_fields").append($row);
+
+    if (autoFocus) {
+      $row.find(".fld-key").focus();
+    }
   }
 
-  $("#addFieldRow").on("click", () => addFieldRow(null));
+  $("#addFieldRow").on("click", function () {
+    const textarea = document.getElementById("tpl_body");
+    if (textarea && textarea.selectionStart !== undefined) {
+      lastCursorPos = textarea.selectionStart;
+    }
+    addFieldRow(null, true);
+  });
+
+  // عند الضغط على زر ✕ (حذف الحقل) -> حذف السطر الخاص به فوريًا حيًا من نص التقرير
   $("#tpl_fields").on("click", ".btn-remove-field", function () {
-    $(this).closest(".dyn-field-row").remove();
+    const $row = $(this).closest(".dyn-field-row");
+    const key = $row.find(".fld-key").val().trim() || $row.data("prev-key");
+    if (key) {
+      const $body = $("#tpl_body");
+      let text = $body.val() || "";
+      const escapedKey = escapeRegex(key);
+      const reRemove = new RegExp("(?:[^\\n]*:{1}\\s*)?\\{\\{\\s*" + escapedKey + "\\s*\\}\\}\\n?", "g");
+      text = text.replace(reRemove, "");
+      $body.val(text);
+    }
+    $row.remove();
+  });
+
+  // إدراج الحقل والاسم العربي عند ضغط زر 📌 إدراج الصريح
+  $("#tpl_fields").on("click", ".btn-insert-field", function () {
+    const $row = $(this).closest(".dyn-field-row");
+    const key = $row.find(".fld-key").val();
+    const label = $row.find(".fld-label").val();
+    insertPlaceholderAtCursor(key, label, true);
+  });
+
+  // المزامنة الحية الفورية (Live Sync) عند الكتابة أو التعديل دون سحب المؤشر إطلاقاً
+  $("#tpl_fields").on("input", ".fld-key, .fld-label", function () {
+    const $row = $(this).closest(".dyn-field-row");
+    const oldKey = $row.data("prev-key") || "";
+    const oldLabel = $row.data("prev-label") || "";
+
+    const newKey = $row.find(".fld-key").val().trim();
+    const newLabel = $row.find(".fld-label").val().trim();
+
+    const $body = $("#tpl_body");
+    let text = $body.val() || "";
+
+    // 1. إذا قمت بمسح المفتاح بالكامل -> احذف السطر الخاص به فوريًا من نص التقرير
+    if (!newKey && oldKey) {
+      const escapedOldKey = escapeRegex(oldKey);
+      const reRemove = new RegExp("(?:[^\\n]*:{1}\\s*)?\\{\\{\\s*" + escapedOldKey + "\\s*\\}\\}\\n?", "g");
+      text = text.replace(reRemove, "");
+      $body.val(text);
+      $row.data("prev-key", "");
+      $row.data("prev-label", "");
+      return;
+    }
+
+    if (!newKey) return;
+
+    const oldTag = `{{${oldKey}}}`;
+    const newTag = `{{${newKey}}}`;
+    const newFullStr = newLabel ? `${newLabel}: ${newTag}` : newTag;
+
+    // 2. إذا كان المفتاح القديم موجوداً بالفعل في النص -> استبدله وطبّق التعديل فوريًا حيًا
+    if (oldKey && (text.includes(oldTag) || text.includes(`{{ ${oldKey} }}`))) {
+      const escapedOldKey = escapeRegex(oldKey);
+      const reOld = new RegExp("(?:[^\\n]*:{1}\\s*)?\\{\\{\\s*" + escapedOldKey + "\\s*\\}\\}", "g");
+      text = text.replace(reOld, newFullStr);
+      $body.val(text);
+    } else if (newLabel && text.includes(newTag)) {
+      // 3. إذا تغير الاسم العربي فقط
+      const escapedNewKey = escapeRegex(newKey);
+      const reUpdateLabel = new RegExp("(?:[^\\n]*:{1}\\s*)?\\{\\{\\s*" + escapedNewKey + "\\s*\\}\\}", "g");
+      text = text.replace(reUpdateLabel, newFullStr);
+      $body.val(text);
+    }
+
+    $row.data("prev-key", newKey);
+    $row.data("prev-label", newLabel);
+  });
+
+  // عند انتهاء المستخدم من كتابة المفتاح والتأكيد
+  $("#tpl_fields").on("change", ".fld-key", function () {
+    const $row = $(this).closest(".dyn-field-row");
+    const newKey = $row.find(".fld-key").val().trim();
+    const newLabel = $row.find(".fld-label").val().trim();
+    if (!newKey) return;
+    const $body = $("#tpl_body");
+    let text = $body.val() || "";
+    if (!text.includes("{{" + newKey + "}}")) {
+      insertPlaceholderAtCursor(newKey, newLabel, false);
+    }
   });
 
   $("#btnNewTemplate").on("click", () => openTplModal(null));
@@ -451,16 +592,36 @@ $(async function () {
     showToast("تم حذف الطبيب");
   });
 
-  // --- حفظ اسم العيادة ---
+  // --- حفظ اسم العيادة وإعدادات الطباعة ---
   function loadClinicSettings() {
     const c = DB.Clinic.get();
     $("#s_clinicName").val(c.clinicName || "");
+    // الافتراضي: كل العناصر ظاهرة (true)
+    $("#s_showLogo").prop("checked",      c.printLogo      !== false);
+    $("#s_showHeader").prop("checked",    c.printHeader    !== false);
+    $("#s_showFooter").prop("checked",    c.printFooter    !== false);
+    $("#s_showWatermark").prop("checked", c.printWatermark !== false);
   }
 
   $("#settingsForm").on("submit", function (e) {
     e.preventDefault();
-    DB.Clinic.save({ clinicName: $("#s_clinicName").val().trim() });
-    showToast("✔ تم حفظ إعدادات العيادة");
+    DB.Clinic.save({
+      clinicName:     $("#s_clinicName").val().trim(),
+      printLogo:      $("#s_showLogo").is(":checked"),
+      printHeader:    $("#s_showHeader").is(":checked"),
+      printFooter:    $("#s_showFooter").is(":checked"),
+      printWatermark: $("#s_showWatermark").is(":checked")
+    });
+
+    // فتح بوب-أب النجاح (Save Success Modal)
+    $("#saveSuccessModal").addClass("show");
+  });
+
+  // إغلاق بوب-أب النجاح
+  $("#closeSaveModalBtn, #saveSuccessModal").on("click", function (e) {
+    if (e.target === this || e.target.id === "closeSaveModalBtn") {
+      $("#saveSuccessModal").removeClass("show");
+    }
   });
 
   $("#btnExportJson").on("click", function () {

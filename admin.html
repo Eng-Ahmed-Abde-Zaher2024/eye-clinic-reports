@@ -142,11 +142,88 @@
             <label>اسم العيادة</label>
             <input type="text" id="s_clinicName" />
           </div>
-          <button type="submit" class="btn btn-primary btn-block">✔️ حفظ</button>
+
+          <!-- إعدادات الطباعة -->
+          <div class="settings-section-title">🖨️ خيارات المعاينة والطباعة</div>
+          <p style="font-size:12px;color:var(--text-dim);margin:4px 0 12px;line-height:1.4;">
+            اختر العناصر التي تظهر في المعاينة فقط وليس الطباعة (تختفي عند الطباعة على ورق ألوان مطبوع سلفاً):
+          </p>
+
+          <div class="print-options-grid">
+            <!-- اللوجو -->
+            <label class="print-option-check">
+              <input type="checkbox" id="s_showLogo" />
+              <span class="check-box-ui"></span>
+              <span class="check-label">
+                <strong>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  اللوجو
+                </strong>
+                <small>يظهر بالمعاينة ويختفي بالطابعة</small>
+              </span>
+            </label>
+            <!-- الهيدر -->
+            <label class="print-option-check">
+              <input type="checkbox" id="s_showHeader" />
+              <span class="check-box-ui"></span>
+              <span class="check-label">
+                <strong>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                  الهيدر
+                </strong>
+                <small>يظهر بالمعاينة ويختفي بالطابعة</small>
+              </span>
+            </label>
+            <!-- الفوتر -->
+            <label class="print-option-check">
+              <input type="checkbox" id="s_showFooter" />
+              <span class="check-box-ui"></span>
+              <span class="check-label">
+                <strong>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                  الفوتر
+                </strong>
+                <small>يظهر بالمعاينة ويختفي بالطابعة</small>
+              </span>
+            </label>
+            <!-- الووتر مارك -->
+            <label class="print-option-check">
+              <input type="checkbox" id="s_showWatermark" />
+              <span class="check-box-ui"></span>
+              <span class="check-label">
+                <strong>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+                  الووتر مارك
+                </strong>
+                <small>يظهر بالمعاينة ويختفي بالطابعة</small>
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;">✔️ حفظ الإعدادات</button>
         </form>
       </div>
 
     </div>
+  </div>
+</div>
+
+
+<!-- ============ Save Success Modal ============ -->
+<div class="modal-backdrop" id="saveSuccessModal">
+  <div class="modal-box" style="text-align:center; max-width:380px; padding:28px 20px;">
+    <div style="width:60px; height:60px; margin:0 auto 16px; background:#eaf8f4; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34b7a0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h3 style="font-size:18px; font-weight:800; color:var(--navy); margin-bottom:8px;">تم حفظ الإعدادات بنجاح!</h3>
+    <p style="font-size:13px; color:var(--text-dim); margin-bottom:20px; line-height:1.5;">
+      تم حفظ خيارات المعاينة والطباعة بنجاح وسوف تُطبّق في شاشة إصدار التقارير.
+    </p>
+    <button type="button" class="btn btn-primary btn-block" id="closeSaveModalBtn" style="font-size:14px; padding:10px 0;">
+      ✔️ رائع، حسناً
+    </button>
   </div>
 </div>
 

@@ -64,6 +64,55 @@ const DB = (() => {
     } catch (e) {
       console.warn("لم يتم التمكن من قراءة ملفات JSON الحية، الاعتماد على التخزين المحلي", e);
     }
+
+    migrateSingleLineHeader();
+    purgeTreatmentFromStoredTemplates();
+  }
+
+  // ترحيل: تحويل سطر اسم المريض / السن / التاريخ من فقرة واحدة إلى ثلاث فقرات
+  function migrateSingleLineHeader() {
+    const templates = read(KEYS.templates, null);
+    if (!templates) return;
+    // يتطابق مع &nbsp;&nbsp; أو &amp;nbsp;&amp;nbsp;
+    const SP = "(?:&(?:amp;)?nbsp;){2}";
+    const OLD = new RegExp(
+      `<p>(<strong>اسم المريض:<\\/strong> \\{\\{name\\}\\}) ${SP} (<strong>[^<]+<\\/strong> \\{\\{age\\}\\} سنة) ${SP} (<strong>[^<]+<\\/strong> \\{\\{date\\}\\})<\\/p>`,
+      "g"
+    );
+    let changed = false;
+    const updated = templates.map(t => {
+      if (!t.bodyHtml) return t;
+      const body = t.bodyHtml.replace(OLD, (_, p1, p2, p3) => {
+        changed = true;
+        return `<p>${p1}</p><p>${p2}</p><p>${p3}</p>`;
+      });
+      return { ...t, bodyHtml: body };
+    });
+    if (changed) write(KEYS.templates, updated);
+  }
+
+  // ترحيل: حذف حقل العلاج الموصوف (treatment) من جميع القوالب المحفوظة في localStorage
+  function purgeTreatmentFromStoredTemplates() {
+    const templates = read(KEYS.templates, null);
+    if (!templates || !Array.isArray(templates)) return;
+    let changed = false;
+    const updated = templates.map(t => {
+      let tChanged = false;
+      let fields = t.fields || [];
+      if (fields.some(f => f.key === "treatment")) {
+        fields = fields.filter(f => f.key !== "treatment");
+        tChanged = true;
+      }
+      let bodyHtml = t.bodyHtml || "";
+      if (bodyHtml.includes("treatment") || bodyHtml.includes("العلاج الموصوف")) {
+        bodyHtml = bodyHtml.replace(/<p>[^<]*\{\{\s*treatment\s*\}\}[^<]*<\/p>/gi, "");
+        bodyHtml = bodyHtml.replace(/<p>[^<]*العلاج الموصوف[^<]*<\/p>/gi, "");
+        tChanged = true;
+      }
+      if (tChanged) changed = true;
+      return { ...t, fields, bodyHtml };
+    });
+    if (changed) write(KEYS.templates, updated);
   }
 
   const DEFAULT_TEMPLATES = [
@@ -78,10 +127,9 @@ const DB = (() => {
         { key: "date", label: "التاريخ" },
         { key: "eye", label: "العين محل الفحص" },
         { key: "diagnosis", label: "التشخيص" },
-        { key: "treatment", label: "العلاج الموصوف" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: 3 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p><strong>العين محل الفحص:</strong> {{eye}}</p><p>تم إجراء فحص شامل لقاع العين وقياس ضغط العين وحدة الإبصار، وقد تبين الآتي:</p><p><strong>التشخيص:</strong> {{diagnosis}}</p><p><strong>العلاج الموصوف:</strong> {{treatment}}</p><p><strong>الراحة الطبية:</strong> يحتاج المريض إلى راحة طبية لمدة <strong>{{rest_days}}</strong> اعتبارات لراحة العين وعدم الإجهاد.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين محل الفحص:</strong> {{eye}}</p><p>تم إجراء فحص شامل لقاع العين وقياس ضغط العين وحدة الإبصار، وقد تبين الآتي:</p><p><strong>التشخيص:</strong> {{diagnosis}}</p><p><strong>الراحة الطبية:</strong> يحتاج المريض إلى راحة طبية لمدة <strong>{{rest_days}}</strong> اعتبارات لراحة العين وعدم الإجهاد.</p>"
     },
     {
       id: "t_sick_leave",
@@ -96,7 +144,7 @@ const DB = (() => {
         { key: "rest_days", label: "مدة الإجازة المرضية (مثل: أسبوع)" },
         { key: "start_date", label: "تاريخ بداية الإجازة" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ التقرير:</strong> {{date}}</p><p>يشهد الطبيب المعالج بأن المريض المذكور أعلاه قد حضر للعيادة وتم فحص حالته الصحية وتبين أنه يعاني من: <strong>{{diagnosis}}</strong>.</p><p>وبناءً على التقييم الطبي ونظراً لحاجة العين للراحة التامة وعدم التعرض للإجهاد أو الغبار، يوصى بمنحه إجازة مرضية وراحة طبية لمدة <strong>{{rest_days}}</strong> تبدأ من يوم <strong>{{start_date}}</strong>.</p><p>هذا التقرير أعطي بناءً على طلب المريض لتقديمه لمن يهمه الأمر.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ التقرير:</strong> {{date}}</p><p>يشهد الطبيب المعالج بأن المريض المذكور أعلاه قد حضر للعيادة وتم فحص حالته الصحية وتبين أنه يعاني من: <strong>{{diagnosis}}</strong>.</p><p>وبناءً على التقييم الطبي ونظراً لحاجة العين للراحة التامة وعدم التعرض للإجهاد أو الغبار، يوصى بمنحه إجازة مرضية وراحة طبية لمدة <strong>{{rest_days}}</strong> تبدأ من يوم <strong>{{start_date}}</strong>.</p><p>هذا التقرير أعطي بناءً على طلب المريض لتقديمه لمن يهمه الأمر.</p>"
     },
     {
       id: "t_lasik_op",
@@ -112,7 +160,7 @@ const DB = (() => {
         { key: "notes", label: "ملاحظات ما بعد العملية" },
         { key: "rest_days", label: "مدة الراحة الموصى بها (مثل: 5 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين التي أُجريت لها العملية:</strong> {{eye}}</p><p><strong>درجة النظر قبل العملية:</strong> {{power_before}}</p><p>تمت عملية تصحيح الإبصار بتقنية الليزك بنجاح ودون أي مضاعفات أثناء الإجراء.</p><p><strong>ملاحظات ما بعد العملية:</strong> {{notes}}</p><p><strong>الراحة والتعافي:</strong> يحتاج المريض لراحة تامة وتجنب إجهاد العين والفرك لمدة <strong>{{rest_days}}</strong> مع الالتزام بالقطرات الموصوفة.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين التي أُجريت لها العملية:</strong> {{eye}}</p><p><strong>درجة النظر قبل العملية:</strong> {{power_before}}</p><p>تمت عملية تصحيح الإبصار بتقنية الليزك بنجاح ودون أي مضاعفات أثناء الإجراء.</p><p><strong>ملاحظات ما بعد العملية:</strong> {{notes}}</p><p><strong>الراحة والتعافي:</strong> يحتاج المريض لراحة تامة وتجنب إجهاد العين والفرك لمدة <strong>{{rest_days}}</strong> مع الالتزام بالقطرات الموصوفة.</p>"
     },
     {
       id: "t_cataract",
@@ -129,7 +177,7 @@ const DB = (() => {
         { key: "post_op_care", label: "تعليمات القطرات والغيار" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: 10 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الجراحة:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم إجراء جراحة إزالة المياه البيضاء (Cataract Extraction) بالموجات فوق الصوتية (الفاكو) وزرع عدسة مطوية مطابقة داخل العين:</p><p><strong>نوع العدسة المزروعة:</strong> {{lens_type}} &nbsp;&nbsp; <strong>قوة العدسة (Power):</strong> {{power}}</p><p><strong>تعليمات العناية:</strong> {{post_op_care}}</p><p><strong>الراحة الطبية:</strong> يوصى بمنح المريض إجازة وراحة طبية لمدة <strong>{{rest_days}}</strong> للتعافي التام ومنع دخول الماء أو الأتربة للعين.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الجراحة:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم إجراء جراحة إزالة المياه البيضاء (Cataract Extraction) بالموجات فوق الصوتية (الفاكو) وزرع عدسة مطوية مطابقة داخل العين:</p><p><strong>نوع العدسة المزروعة:</strong> {{lens_type}} &nbsp;&nbsp; <strong>قوة العدسة (Power):</strong> {{power}}</p><p><strong>تعليمات العناية:</strong> {{post_op_care}}</p><p><strong>الراحة الطبية:</strong> يوصى بمنح المريض إجازة وراحة طبية لمدة <strong>{{rest_days}}</strong> للتعافي التام ومنع دخول الماء أو الأتربة للعين.</p>"
     },
     {
       id: "t_glaucoma",
@@ -142,10 +190,9 @@ const DB = (() => {
         { key: "date", label: "التاريخ" },
         { key: "iop_right", label: "ضغط العين اليمنى (mmHg)" },
         { key: "iop_left", label: "ضغط العين اليسرى (mmHg)" },
-        { key: "field_test", label: "نتيجة مجال الإبصار" },
-        { key: "treatment", label: "القطرات والخطة العلاجية" }
+        { key: "field_test", label: "نتيجة مجال الإبصار" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p>تم تقييم حالة المياه الزرقاء ومتابعة ضغط العين والعصب البصري وكان الفحص كالآتي:</p><p><strong>قياس ضغط العين اليمنى (IOP OD):</strong> {{iop_right}} mmHg &nbsp;&nbsp; <strong>العين اليسرى (IOP OS):</strong> {{iop_left}} mmHg</p><p><strong>نتائج فحص مجال الإبصار (Visual Field):</strong> {{field_test}}</p><p><strong>الخطة العلاجية والقطرات:</strong> {{treatment}}</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p>تم تقييم حالة المياه الزرقاء ومتابعة ضغط العين والعصب البصري وكان الفحص كالآتي:</p><p><strong>قياس ضغط العين اليمنى (IOP OD):</strong> {{iop_right}} mmHg &nbsp;&nbsp; <strong>العين اليسرى (IOP OS):</strong> {{iop_left}} mmHg</p><p><strong>نتائج فحص مجال الإبصار (Visual Field):</strong> {{field_test}}</p>"
     },
     {
       id: "t_diabetic_retina",
@@ -161,7 +208,7 @@ const DB = (() => {
         { key: "laser_sessions", label: "جلسات الليزر / العلاج المنجز" },
         { key: "recommendations", label: "التوصيات وموعد المتابعة" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p><strong>العين المجهوزة بالفحص:</strong> {{eye}}</p><p>تم فحص قاع العين لمريض السكر وتبين وجود تغيرات بالشبكية وفق التقييم التالي:</p><p><strong>مرحلة اعتلال الشبكية:</strong> {{stage}}</p><p><strong>جلسات الليزر / العلاج السابق:</strong> {{laser_sessions}}</p><p><strong>التوصيات الطبية:</strong> {{recommendations}} وضبط مستوى السكر بالدم والمتابعة الدورية خلال شهرين.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين المجهوزة بالفحص:</strong> {{eye}}</p><p>تم فحص قاع العين لمريض السكر وتبين وجود تغيرات بالشبكية وفق التقييم التالي:</p><p><strong>مرحلة اعتلال الشبكية:</strong> {{stage}}</p><p><strong>جلسات الليزر / العلاج السابق:</strong> {{laser_sessions}}</p><p><strong>التوصيات الطبية:</strong> {{recommendations}} وضبط مستوى السكر بالدم والمتابعة الدورية خلال شهرين.</p>"
     },
     {
       id: "t_refraction",
@@ -180,7 +227,7 @@ const DB = (() => {
         { key: "axis_os", label: "Axis اليسرى" },
         { key: "add", label: "إضافة القراءة (ADD)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p><strong>مقاسات النظارة الطبية الموصوفة (Prescription):</strong></p><p><strong>العين اليمنى (OD):</strong> Sph: {{sph_od}} | Cyl: {{cyl_od}} | Axis: {{axis_od}}°</p><p><strong>العين اليسرى (OS):</strong> Sph: {{sph_os}} | Cyl: {{cyl_os}} | Axis: {{axis_os}}°</p><p><strong>إضافة القراءة (ADD):</strong> {{add}}</p><p>يوصى بارتداء النظارة أثناء القراءة أو قيادة السيارة حسب التوجيهات.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>مقاسات النظارة الطبية الموصوفة (Prescription):</strong></p><p><strong>العين اليمنى (OD):</strong> Sph: {{sph_od}} | Cyl: {{cyl_od}} | Axis: {{axis_od}}°</p><p><strong>العين اليسرى (OS):</strong> Sph: {{sph_os}} | Cyl: {{cyl_os}} | Axis: {{axis_os}}°</p><p><strong>إضافة القراءة (ADD):</strong> {{add}}</p><p>يوصى بارتداء النظارة أثناء القراءة أو قيادة السيارة حسب التوجيهات.</p>"
     },
     {
       id: "t_crosslinking",
@@ -196,7 +243,7 @@ const DB = (() => {
         { key: "post_care", label: "تعليمات الضمادة والقطرات" },
         { key: "rest_days", label: "مدة الراحة من العمل/الدراسة (مثل: أسبوع)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المعالجة:</strong> {{eye}} &nbsp;&nbsp; <strong>قيمة انحناء القرنية Kmax:</strong> {{kmax}}</p><p>تم خضوع المريض لإجراء تثبيت القرنية الضوئي (Corneal Cross-Linking CXL) بنجاح لحماية القرنية من التحدب.</p><p><strong>العناية بالضمادة الشفافة:</strong> {{post_care}}</p><p><strong>فترة الراحة والراحة من العمل:</strong> يتطلب الإجراء راحة طبية وعدم التعرض للضوء الساطع لمدة <strong>{{rest_days}}</strong>.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المعالجة:</strong> {{eye}} &nbsp;&nbsp; <strong>قيمة انحناء القرنية Kmax:</strong> {{kmax}}</p><p>تم خضوع المريض لإجراء تثبيت القرنية الضوئي (Corneal Cross-Linking CXL) بنجاح لحماية القرنية من التحدب.</p><p><strong>العناية بالضمادة الشفافة:</strong> {{post_care}}</p><p><strong>فترة الراحة والراحة من العمل:</strong> يتطلب الإجراء راحة طبية وعدم التعرض للضوء الساطع لمدة <strong>{{rest_days}}</strong>.</p>"
     },
     {
       id: "t_retinal_injection",
@@ -213,7 +260,7 @@ const DB = (() => {
         { key: "next_dose", label: "موعد الجلسة القادمة" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: 3 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الحقن:</strong> {{date}}</p><p><strong>العين التي تم حقنها:</strong> {{eye}}</p><p>تم إعطاء المريض حقنة داخل السائل الزجاجي (Intravitreal Injection) بمادة: <strong>{{drug_name}}</strong> (الجلسة رقم: {{dose_number}}).</p><p><strong>موعد الجلسة القادمة:</strong> {{next_dose}}</p><p><strong>الراحة والملاحظة:</strong> يُنصح المريض بالراحة والامتناع عن غسل العين بالماء لمدة <strong>{{rest_days}}</strong> للوقاية من العدوى.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الحقن:</strong> {{date}}</p><p><strong>العين التي تم حقنها:</strong> {{eye}}</p><p>تم إعطاء المريض حقنة داخل السائل الزجاجي (Intravitreal Injection) بمادة: <strong>{{drug_name}}</strong> (الجلسة رقم: {{dose_number}}).</p><p><strong>موعد الجلسة القادمة:</strong> {{next_dose}}</p><p><strong>الراحة والملاحظة:</strong> يُنصح المريض بالراحة والامتناع عن غسل العين بالماء لمدة <strong>{{rest_days}}</strong> للوقاية من العدوى.</p>"
     },
     {
       id: "t_conjunctivitis",
@@ -226,10 +273,9 @@ const DB = (() => {
         { key: "date", label: "التاريخ" },
         { key: "eye", label: "العين المصابة" },
         { key: "contagious_type", label: "نوع الالتهاب (فيروسي / بكتيري)" },
-        { key: "treatment", label: "العلاج والقطرات" },
         { key: "rest_days", label: "مدة الراحة والرمز الوقائي (مثل: 4 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تبين بعد الفحص الإكلينيكي إصابة المريض بـ: <strong>{{contagious_type}}</strong> (التهاب ملتحمة العين).</p><p><strong>العلاج المقترح:</strong> {{treatment}}</p><p><strong>تنبيه وراحة وقائية:</strong> نظراً لأن الحالة قد تكون معدية وتستلزم راحة العين، يوصى بالابتعاد عن العمل ومكان الدراسة لمدة <strong>{{rest_days}}</strong> لتجنب العدوى والتعافي.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تبين بعد الفحص الإكلينيكي إصابة المريض بـ: <strong>{{contagious_type}}</strong> (التهاب ملتحمة العين).</p><p><strong>تنبيه وراحة وقائية:</strong> نظراً لأن الحالة قد تكون معدية وتستلزم راحة العين، يوصى بالابتعاد عن العمل ومكان الدراسة لمدة <strong>{{rest_days}}</strong> لتجنب العدوى والتعافي.</p>"
     },
     {
       id: "t_pterygium",
@@ -242,10 +288,9 @@ const DB = (() => {
         { key: "date", label: "تاريخ العملية" },
         { key: "eye", label: "العين محل الجراحة" },
         { key: "graft_type", label: "نوع الترقيع المستعمل" },
-        { key: "treatment", label: "علاج المتابعة" },
         { key: "rest_days", label: "مدة الراحة الموصى بها (مثل: أسبوع)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم استئصال الظفرة الملتحمية (Pterygium Excision) بنجاح مع ترقيع الملتحمة الذاتي: <strong>{{graft_type}}</strong>.</p><p><strong>علاج المتابعة:</strong> {{treatment}}</p><p><strong>الراحة الموصى بها:</strong> يستلزم الوضع راحة طبية وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع الأتربة والغبار.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم استئصال الظفرة الملتحمية (Pterygium Excision) بنجاح مع ترقيع الملتحمة الذاتي: <strong>{{graft_type}}</strong>.</p><p><strong>الراحة الموصى بها:</strong> يستلزم الوضع راحة طبية وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع الأتربة والغبار.</p>"
     },
     {
       id: "t_dcr",
@@ -261,7 +306,7 @@ const DB = (() => {
         { key: "stent_info", label: "أنبوبة السيليكون المزروعة" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: 7 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين:</strong> {{eye}}</p><p>تم إجراء عملية جراحة القناة الدمعية (Dacryocystorhinostomy - DCR): <strong>{{procedure}}</strong> مع تركيب أنبوبة سيليكون مؤقتة: <strong>{{stent_info}}</strong>.</p><p><strong>الراحة والتعافي:</strong> يحتاج المريض إلى راحة من الإجهاد البدني والنفخ من الأنف لمدة <strong>{{rest_days}}</strong>.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين:</strong> {{eye}}</p><p>تم إجراء عملية جراحة القناة الدمعية (Dacryocystorhinostomy - DCR): <strong>{{procedure}}</strong> مع تركيب أنبوبة سيليكون مؤقتة: <strong>{{stent_info}}</strong>.</p><p><strong>الراحة والتعافي:</strong> يحتاج المريض إلى راحة من الإجهاد البدني والنفخ من الأنف لمدة <strong>{{rest_days}}</strong>.</p>"
     },
     {
       id: "t_strabismus",
@@ -277,7 +322,7 @@ const DB = (() => {
         { key: "alignment", label: "استقامة المحور بعد الجراحة" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: أسبوعين)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين/العضلات المعالجة:</strong> {{eye}} — {{muscles}}</p><p>تمت عملية تعديل عضلات العين وتعديل استقامة المحور البصري بنجاح.</p><p><strong>استقامة العينين بعد العملية:</strong> {{alignment}}</p><p><strong>فترة الراحة الطبية:</strong> يمنح المريض راحة طبية وتوقف عن المجهود لمدة <strong>{{rest_days}}</strong>.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين/العضلات المعالجة:</strong> {{eye}} — {{muscles}}</p><p>تمت عملية تعديل عضلات العين وتعديل استقامة المحور البصري بنجاح.</p><p><strong>استقامة العينين بعد العملية:</strong> {{alignment}}</p><p><strong>فترة الراحة الطبية:</strong> يمنح المريض راحة طبية وتوقف عن المجهود لمدة <strong>{{rest_days}}</strong>.</p>"
     },
     {
       id: "t_dry_eye",
@@ -292,7 +337,7 @@ const DB = (() => {
         { key: "tbut", label: "قياس تكسر الدمع TBUT (ثانية)" },
         { key: "treatment_plan", label: "القطرات البديلة والخطة" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p>تم إجراء فحص جفاف العين المتقدم وكانت النتائج كالتالي:</p><p><strong>اختبار شيرمر (Schirmer Test):</strong> {{schirmer}} mm &nbsp;&nbsp; <strong>زمن تكسر الفيلم الدمعي (TBUT):</strong> {{tbut}} ثانية</p><p><strong>العلاج والبدائل الدمعية:</strong> {{treatment_plan}} وتجنب التكييف والشاشات لفترات طويلة.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p>تم إجراء فحص جفاف العين المتقدم وكانت النتائج كالتالي:</p><p><strong>اختبار شيرمر (Schirmer Test):</strong> {{schirmer}} mm &nbsp;&nbsp; <strong>زمن تكسر الفيلم الدمعي (TBUT):</strong> {{tbut}} ثانية</p><p><strong>العلاج والبدائل الدمعية:</strong> {{treatment_plan}} وتجنب التكييف والشاشات لفترات طويلة.</p>"
     },
     {
       id: "t_corneal_abrasion",
@@ -304,11 +349,10 @@ const DB = (() => {
         { key: "age", label: "السن" },
         { key: "date", label: "تاريخ المعاينة" },
         { key: "eye", label: "العين المصابة" },
-        { key: "cause", "label": "سبب الإصابة" },
-        { key: "treatment", "label": "العلاج والضمادة" },
-        { key: "rest_days", "label": "مدة الراحة الطبية (مثل: 4 أيام)" }
+        { key: "cause", label: "سبب الإصابة" },
+        { key: "rest_days", label: "مدة الراحة الطبية (مثل: 4 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ المعاينة:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>حضر المريض إلى قسم الطوارئ وتبين وجود خدش سطحي في القرنية (Corneal Abrasion) نتيجة: <strong>{{cause}}</strong>.</p><p><strong>الإجراء والعلاج:</strong> تم عمل غيار معقم ووضع عدسة لاصقة ضمادية أو مراهم مضادة: {{treatment}}.</p><p><strong>الإجازة والراحة الطبية:</strong> نظراً لألم الخدش وحاجة النسيج التغطوي للاحتيام، يُمنح المريض راحة طبية لمدة <strong>{{rest_days}}</strong>.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ المعاينة:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>حضر المريض إلى قسم الطوارئ وتبين وجود خدش سطحي في القرنية (Corneal Abrasion) نتيجة: <strong>{{cause}}</strong>.</p><p><strong>الإجازة والراحة الطبية:</strong> نظراً لألم الخدش وحاجة النسيج التغطوي للاحتيام، يُمنح المريض راحة طبية لمدة <strong>{{rest_days}}</strong>.</p>"
     },
     {
       id: "t_oct_scan",
@@ -324,7 +368,7 @@ const DB = (() => {
         { key: "fovea_status", label: "حالة التقعر المركزي" },
         { key: "summary", label: "الخلاصة والتشخيص" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الفحص:</strong> {{date}}</p><p><strong>العين المفحوصة:</strong> {{eye}}</p><p>نتائج التصوير المقطعي للشبكية ولطخة العين (Optical Coherence Tomography - OCT):</p><p><strong>سمك مركز اللطخة (Central Macular Thickness):</strong> {{macular_thickness}} µm</p><p><strong>حالة التقعر المركزي (Foveal Contour):</strong> {{fovea_status}}</p><p><strong>الخلاصة:</strong> {{summary}}</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الفحص:</strong> {{date}}</p><p><strong>العين المفحوصة:</strong> {{eye}}</p><p>نتائج التصوير المقطعي للشبكية ولطخة العين (Optical Coherence Tomography - OCT):</p><p><strong>سمك مركز اللطخة (Central Macular Thickness):</strong> {{macular_thickness}} µm</p><p><strong>حالة التقعر المركزي (Foveal Contour):</strong> {{fovea_status}}</p><p><strong>الخلاصة:</strong> {{summary}}</p>"
     },
     {
       id: "t_retinal_detachment",
@@ -340,7 +384,7 @@ const DB = (() => {
         { key: "head_position", label: "الوضعية المطلوبة للرأس" },
         { key: "rest_days", label: "مدة الراحة التامة (مثل: شهر كامل)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الجراحة:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم إجراء جراحة استئصال الجسم الزجاجي وتثبيت الشبكية (Vitrectomy & Retinal Reattachment) بنجاح.</p><p><strong>المادة المحقونة داخل العين (Tamponade):</strong> {{tamponade}}</p><p><strong>الوضعية المطلوبة للرأس:</strong> {{head_position}}</p><p><strong>الراحة التامة المطلوبة:</strong> يحتاج المريض لراحة تامة بالسرير والإجازة المرضية لمدة <strong>{{rest_days}}</strong> متواصلة.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الجراحة:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم إجراء جراحة استئصال الجسم الزجاجي وتثبيت الشبكية (Vitrectomy & Retinal Reattachment) بنجاح.</p><p><strong>المادة المحقونة داخل العين (Tamponade):</strong> {{tamponade}}</p><p><strong>الوضعية المطلوبة للرأس:</strong> {{head_position}}</p><p><strong>الراحة التامة المطلوبة:</strong> يحتاج المريض لراحة تامة بالسرير والإجازة المرضية لمدة <strong>{{rest_days}}</strong> متواصلة.</p>"
     },
     {
       id: "t_visual_fitness",
@@ -356,7 +400,7 @@ const DB = (() => {
         { key: "color_vision", label: "تمييز الألوان (إيشيهارا)" },
         { key: "result", label: "نتيجة التقييم (لائق / غير لائق)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>التاريخ:</strong> {{date}}</p><p>بناءً على طلب المريض لتحديد كفاءة حدة الإبصار واللياقة البصرية، أظهر الفحص النتائج التالية:</p><p><strong>حدّة الإبصار للعين اليمنى:</strong> {{va_right}} &nbsp;&nbsp; <strong>حدّة الإبصار للعين اليسرى:</strong> {{va_left}}</p><p><strong>تمييز الألوان (Ishihara Test):</strong> {{color_vision}}</p><p><strong>النتيجة والتوصية:</strong> المريض {{result}} من الناحية البصرية لممارسة القيادة/العمل.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p>بناءً على طلب المريض لتحديد كفاءة حدة الإبصار واللياقة البصرية، أظهر الفحص النتائج التالية:</p><p><strong>حدّة الإبصار للعين اليمنى:</strong> {{va_right}} &nbsp;&nbsp; <strong>حدّة الإبصار للعين اليسرى:</strong> {{va_left}}</p><p><strong>تمييز الألوان (Ishihara Test):</strong> {{color_vision}}</p><p><strong>النتيجة والتوصية:</strong> المريض {{result}} من الناحية البصرية لممارسة القيادة/العمل.</p>"
     },
     {
       id: "t_foreign_body",
@@ -369,10 +413,9 @@ const DB = (() => {
         { key: "date", label: "تاريخ الإجراء" },
         { key: "eye", label: "العين المصابة" },
         { key: "object_type", label: "نوع الجسم الغريب (رايش حديد / زجاج)" },
-        { key: "treatment", label: "العلاج والقطرات" },
         { key: "rest_days", label: "مدة الراحة الطبية (مثل: 3 أيام)" }
       ],
-      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}} &nbsp;&nbsp; <strong>السن:</strong> {{age}} سنة &nbsp;&nbsp; <strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تمت إزالة جسم غريب (<strong>{{object_type}}</strong>) من طبقة القرنية السطحية تحت البنج الموضعي وتنظيف حلقة الصدأ (Rust Ring).</p><p><strong>العلاج الموصوف:</strong> {{treatment}}</p><p><strong>فترة الراحة الطبية:</strong> يحتاج المريض إلى راحة وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع التلوث والتئام القرنية.</p>"
+      bodyHtml: "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تمت إزالة جسم غريب (<strong>{{object_type}}</strong>) من طبقة القرنية السطحية تحت البنج الموضعي وتنظيف حلقة الصدأ (Rust Ring).</p><p><strong>فترة الراحة الطبية:</strong> يحتاج المريض إلى راحة وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع التلوث والتئام القرنية.</p>"
     },
     {
       id: "t_amblyopia",

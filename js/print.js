@@ -10,11 +10,36 @@ $(async function () {
   // جلب أحدث بيانات من ملفات JSON المرفوعة على جيت هب
   await DB.init();
 
-  const clinic = DB.Clinic.get();
-  $("#clinicNameEl").text(clinic.clinicName || "مركز الخبراء");
-  if (clinic.logo) {
-    $("#watermarkImg, #headerLogo").attr("src", clinic.logo);
+  // ---- تطبيق إعدادات العيادة وإخفاء/إظهار عناصر الطباعة ----
+  function applyClinicSettings() {
+    const clinic = DB.Clinic.get();
+    $("#clinicNameEl, #footerClinicName").text(clinic.clinicName || "مركز الخبراء لطب وجراحة العيون والليزك");
+    if (clinic.logo) {
+      $("#watermarkImg, #headerLogo").attr("src", clinic.logo);
+    }
+
+    // إعدادات المعاينة والطباعة (للطباعة على ورق ألوان)
+    // إذا كان الخيار محدداً (true): يظهر في المعاينة ويختفي عند الطباعة (hide-on-print)
+    // إذا كان ملغياً (false): يختفي تماماً في المعاينة والطباعة (hidden-always)
+    togglePrintElement("#headerLogo",     clinic.printLogo);
+    togglePrintElement(".a4-header",      clinic.printHeader);
+    togglePrintElement(".a4-footer",      clinic.printFooter);
+    togglePrintElement("#watermarkImg",   clinic.printWatermark);
   }
+
+  function togglePrintElement(selector, isPreviewOnly) {
+    const $el = $(selector);
+    $el.removeClass("hide-on-print hidden-always");
+    if (isPreviewOnly !== false) {
+      // يظهر بالمعاينة ويختفي بالطابعة (ورق ألوان)
+      $el.addClass("hide-on-print");
+    } else {
+      // إخفاء تام من المعاينة والطباعة
+      $el.addClass("hidden-always");
+    }
+  }
+
+  applyClinicSettings();
 
   // ---- تحميل قائمة الأطباء في الـ dropdown ----
   function loadDoctors() {
@@ -79,26 +104,46 @@ $(async function () {
 
     (currentTemplate.fields || []).forEach((f) => {
       const isDate = /تاريخ|date/i.test(f.key + f.label);
+      const isEye = /عين|eye/i.test(f.key + f.label);
+
       if (isDate) {
         // حقل تاريخ → date picker (كليندر)
         const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         $form.append(`
           <div class="field">
-            <label>${escapeHtml(f.label)}</label>
-            <input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" />
+            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
+            <input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" required />
+          </div>
+        `);
+      } else if (isEye) {
+        $form.append(`
+          <div class="field">
+            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
+            <select class="dyn-input" data-key="${escapeHtml(f.key)}" required>
+              <option value="">— اختر —</option>
+              <option value="اليمنى">اليمنى</option>
+              <option value="اليسرى">اليسرى</option>
+              <option value="كلتا العينين">كلتا العينين</option>
+              <option value="لا يوجد">لا يوجد</option>
+            </select>
           </div>
         `);
       } else {
         $form.append(`
           <div class="field">
-            <label>${escapeHtml(f.label)}</label>
-            <input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" />
+            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
+            <input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />
           </div>
         `);
       }
     });
 
-    $form.on("input", ".dyn-input", renderPreview);
+    $form.on("input change", ".dyn-input", function () {
+      if ($(this).val() && $(this).val().trim() !== "") {
+        $(this).removeClass("field-invalid");
+      }
+      renderPreview();
+    });
   }
 
   function renderPreview() {
@@ -129,9 +174,15 @@ $(async function () {
     let html = currentTemplate.bodyHtml || "";
     (currentTemplate.fields || []).forEach((f) => {
       const re = new RegExp("{{\\s*" + escapeRegex(f.key) + "\\s*}}", "g");
-      const safeVal = escapeHtml(values[f.key] || `[${f.label}]`);
+      const val = values[f.key];
+      const safeVal = (val !== undefined && val !== "") ? escapeHtml(val) : `<span style="color:#888;">[${escapeHtml(f.label)}]</span>`;
       html = html.replace(re, safeVal);
     });
+
+    // إزالة أي فقرات تحتوي على متغيّرات تم حذفها من قائمة حقول القالب (مثل {{treatment}})
+    html = html.replace(/<p>[^<]*\{\{\s*[\w-]+\s*\}\}[^<]*<\/p>/gi, "");
+    // تنظيف أي أقواس متغيّرات متبقية لم تُستبدل
+    html = html.replace(/\{\{\s*[\w-]+\s*\}\}/g, "");
 
     $("#reportBody").html(html);
     $("#footerDate").text("تاريخ الطباعة: " + new Date().toLocaleDateString("ar-EG"));
@@ -139,15 +190,51 @@ $(async function () {
     $("#footerClinicName").text(clinicData.clinicName || "مركز الخبراء لطب وجراحة العيون والليزك");
   }
 
+  // ---- دالة التحقق الإلزامي من إدخال كافة الحقول قبل الطباعة ----
+  function validatePrintForm() {
+    let isValid = true;
+    let $firstInvalid = null;
+
+    // 1. التحقق من حقول التقرير المتغيّرة
+    $(".dyn-input").each(function () {
+      const val = $(this).val();
+      if (!val || val.trim() === "") {
+        $(this).addClass("field-invalid");
+        if (isValid) {
+          isValid = false;
+          $firstInvalid = $(this);
+        }
+      } else {
+        $(this).removeClass("field-invalid");
+      }
+    });
+
+    if (!isValid) {
+      if ($firstInvalid) {
+        $firstInvalid.focus();
+      }
+      showToast("⚠️ يرجى تعبئة جميع الحقول المطلوبة قبل الطباعة", true);
+    }
+
+    return isValid;
+  }
+
   $("#templateSelect").on("change", function () {
     selectTemplate($(this).val());
   });
 
-  $("#printBtn").on("click", function () {
+  $("#printBtn").on("click", function (e) {
+    e.preventDefault();
     if (!currentTemplate) {
       showToast("اختر قالبًا أولًا", true);
       return;
     }
+
+    // التحقق من أن جميع الحقول ممتلئة
+    if (!validatePrintForm()) {
+      return;
+    }
+
     window.print();
   });
 

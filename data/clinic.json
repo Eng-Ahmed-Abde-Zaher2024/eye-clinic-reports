@@ -1,4 +1,8 @@
 {
   "clinicName": "مركز الخبراء لطب وجراحة العيون والليزك",
-  "logo": "assets/logo.png"
+  "logo": "assets/logo.png",
+  "printLogo": true,
+  "printHeader": true,
+  "printFooter": true,
+  "printWatermark": true
 }
