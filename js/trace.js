@@ -557,8 +557,13 @@ $(function () {
 
       var devId = (v.deviceid || v.deviceId || "").trim();
       var devName = (v.devicename || v.deviceName || "").trim();
-      var ip = (v.ip || "").trim();
+      var rawIp = (v.ip || "").trim();
       var username = (v.username || "").trim();
+
+      // إذا كانت خانة الـ IP تحتوي على اسم مستخدم (مثل admin)
+      var ip = /^(\d{1,3}\.){3}\d{1,3}$/.test(rawIp) ? rawIp : '';
+      if (!username && rawIp && !ip) username = rawIp;
+
       var primaryTarget = devId || username || ip;
 
       var displayIpParts = [];
@@ -572,7 +577,8 @@ $(function () {
         displayIpParts.push(`<div style="font-family:monospace; font-size:9.5px; color:var(--dim); margin-top:2px;" title="المعرف الفريد للجهاز: ${escapeHtml(devId)}">🆔 ${escapeHtml(devId.slice(0, 14))}...</div>`);
       }
       var displayIp = displayIpParts.join("") || "—";
-      var userInfo = isLogged ? `${escapeHtml(v.fullName || v.username || "")} <small style="color:var(--dim)">(${escapeHtml(v.role || "")})</small>` : "—";
+      var userInfo = isLogged ? `${escapeHtml(v.fullName || v.username || "")} <small style="color:var(--dim)">(${escapeHtml(v.role || "")})</small>` : (username ? escapeHtml(username) : "—");
+
 
       // أزرار الإجراءات المخصصة بالاستهداف
       var actionBtns = [];
