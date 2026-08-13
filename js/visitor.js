@@ -197,9 +197,9 @@ if (VISITOR_SCRIPT_URL && VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
     }, 4000);
 
     var APIs = [
-      { url: 'https://api.ipify.org?format=json',   key: 'ip'  },
-      { url: 'https://api4.my-ip.io/ip.json',        key: 'ip'  },
-      { url: 'https://api.ip.sb/geoip',              key: 'ip'  }
+      { url: 'https://api.ipify.org?format=json', key: 'ip' },
+      { url: 'https://ipapi.co/json',             key: 'ip' },
+      { url: 'https://api.ip.sb/geoip',           key: 'ip' }
     ];
 
     APIs.forEach(function (api) {

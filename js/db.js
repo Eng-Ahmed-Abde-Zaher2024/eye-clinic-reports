@@ -30,26 +30,37 @@ const DB = (() => {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  // ---------- جلب ملفات JSON الخارجية لتحديث البيانات عند الفتح ----------
+  // ---------- جلب ملفات JSON الخارجية لتحديث البيانات عند الفتح لأول مرة ----------
   async function loadJsonFiles() {
     // التصفح المباشر من الملفات (file://) لا يدعم fetch() في المتصفحات الحديثة بسبب سياسة CORS
     if (window.location.protocol === "file:") {
       return;
     }
+
+    // إذا كانت البيانات موجودة بالفعل في localStorage فلا نقوم بالاستبدال من جيت هب حتى لا تمحى تعديلات المستخدم
+    const needDoctors = !localStorage.getItem(KEYS.doctors);
+    const needTemplates = !localStorage.getItem(KEYS.templates);
+    const needClinic = !localStorage.getItem(KEYS.clinic);
+    const needUsers = !localStorage.getItem(KEYS.users);
+
+    if (!needDoctors && !needTemplates && !needClinic && !needUsers) {
+      return;
+    }
+
     try {
       const fetchJson = (url) => fetch(url + "?t=" + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
 
       const [doctors, templates, clinic, users] = await Promise.all([
-        fetchJson("data/doctors.json"),
-        fetchJson("data/templates.json"),
-        fetchJson("data/clinic.json"),
-        fetchJson("data/users.json")
+        needDoctors ? fetchJson("data/doctors.json") : null,
+        needTemplates ? fetchJson("data/templates.json") : null,
+        needClinic ? fetchJson("data/clinic.json") : null,
+        needUsers ? fetchJson("data/users.json") : null
       ]);
 
-      if (doctors && Array.isArray(doctors) && doctors.length > 0) write(KEYS.doctors, doctors);
-      if (templates && Array.isArray(templates) && templates.length > 0) write(KEYS.templates, templates);
-      if (clinic && typeof clinic === "object") write(KEYS.clinic, clinic);
-      if (users && Array.isArray(users) && users.length > 0) write(KEYS.users, users);
+      if (needDoctors && doctors && Array.isArray(doctors) && doctors.length > 0) write(KEYS.doctors, doctors);
+      if (needTemplates && templates && Array.isArray(templates) && templates.length > 0) write(KEYS.templates, templates);
+      if (needClinic && clinic && typeof clinic === "object") write(KEYS.clinic, clinic);
+      if (needUsers && users && Array.isArray(users) && users.length > 0) write(KEYS.users, users);
     } catch (e) {
       console.warn("لم يتم التمكن من قراءة ملفات JSON الحية، الاعتماد على التخزين المحلي", e);
     }
