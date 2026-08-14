@@ -20,6 +20,10 @@ $(async function () {
       $btn.addClass("active");
       $(".tab-panel").removeClass("active");
       $panel.addClass("active");
+      if (tab === "settings") {
+        loadClinicSettings();
+        renderDoctors();
+      }
       try {
         sessionStorage.setItem("eyeclinic_admin_tab", tab);
         history.replaceState(null, null, "#" + tab);

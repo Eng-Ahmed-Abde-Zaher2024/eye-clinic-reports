@@ -51,24 +51,28 @@ const DB = (() => {
         fetchJson("data/users.json")
       ]);
 
-      // ─── الأطباء: تحديث فوري من الخادم ───
+      // ─── الأطباء: تحديث من الخادم إلا إذا كانت هناك تعديلات محلية غير مُصدرة ───
       if (doctors && Array.isArray(doctors) && doctors.length > 0) {
-        write(KEYS.doctors, doctors);
+        if (localStorage.getItem("eyeclinic_doctors_dirty") !== "true") {
+          write(KEYS.doctors, doctors);
+        }
       }
 
-      // ─── القوالب: دمج ذكي — القوالب الموجودة في الخادم تُحدَّث بالكامل، والقوالب المحلية الجديدة تُحفظ ───
+      // ─── القوالب: تحديث من الخادم إلا إذا كانت هناك تعديلات محلية غير مُصدرة ───
       if (templates && Array.isArray(templates) && templates.length > 0) {
-        const localTemplates = read(KEYS.templates, []);
-        const remoteIds = new Set(templates.map((t) => t.id));
-        // القوالب المحلية التي أنشأها المستخدم (ليست في الخادم) نحتفظ بها
-        const localOnly = localTemplates.filter((t) => !remoteIds.has(t.id));
-        write(KEYS.templates, [...templates, ...localOnly]);
+        if (localStorage.getItem("eyeclinic_templates_dirty") !== "true") {
+          const localTemplates = read(KEYS.templates, []);
+          const remoteIds = new Set(templates.map((t) => t.id));
+          const localOnly = localTemplates.filter((t) => !remoteIds.has(t.id));
+          write(KEYS.templates, [...templates, ...localOnly]);
+        }
       }
 
-      // ─── إعدادات العيادة: تحديث من الخادم إذا وُجدت ───
+      // ─── إعدادات العيادة: تحديث من الخادم إلا إذا كانت هناك تعديلات محلية غير مُصدرة ───
       if (clinic && typeof clinic === "object" && Object.keys(clinic).length > 0) {
-        const currentClinic = read(KEYS.clinic, {});
-        write(KEYS.clinic, { ...currentClinic, ...clinic });
+        if (localStorage.getItem("eyeclinic_clinic_dirty") !== "true") {
+          write(KEYS.clinic, clinic);
+        }
       }
 
       // ─── المستخدمون: تحديث من الخادم ما لم تكن هناك تعديلات محلية غير مُصدرة ───
@@ -520,17 +524,23 @@ const DB = (() => {
       tpl.createdAt = new Date().toISOString();
       templates.push(tpl);
       write(KEYS.templates, templates);
+      localStorage.setItem("eyeclinic_templates_dirty", "true");
       return tpl;
     },
     update(id, changes) {
       const templates = this.all().map((t) => (t.id === id ? { ...t, ...changes } : t));
       write(KEYS.templates, templates);
+      localStorage.setItem("eyeclinic_templates_dirty", "true");
     },
     remove(id) {
       const templates = this.all().filter((t) => t.id !== id);
       write(KEYS.templates, templates);
+      localStorage.setItem("eyeclinic_templates_dirty", "true");
     },
-    replaceAll(list) { write(KEYS.templates, list); }
+    replaceAll(list) {
+      write(KEYS.templates, list);
+      localStorage.setItem("eyeclinic_templates_dirty", "true");
+    }
   };
 
   // ---------------------- Session ----------------------
@@ -565,6 +575,7 @@ const DB = (() => {
     save(changes) {
       const current = this.get();
       write(KEYS.clinic, { ...current, ...changes });
+      localStorage.setItem("eyeclinic_clinic_dirty", "true");
     }
   };
 
@@ -577,11 +588,13 @@ const DB = (() => {
       doctor.id = uid("d");
       list.push(doctor);
       write(KEYS.doctors, list);
+      localStorage.setItem("eyeclinic_doctors_dirty", "true");
       return doctor;
     },
     remove(id) {
       const list = this.all().filter((d) => d.id !== id);
       write(KEYS.doctors, list);
+      localStorage.setItem("eyeclinic_doctors_dirty", "true");
     }
   };
 
@@ -600,6 +613,12 @@ const DB = (() => {
 
     if (filename === "users.json") {
       localStorage.removeItem("eyeclinic_users_dirty");
+    } else if (filename === "clinic.json") {
+      localStorage.removeItem("eyeclinic_clinic_dirty");
+    } else if (filename === "templates.json") {
+      localStorage.removeItem("eyeclinic_templates_dirty");
+    } else if (filename === "doctors.json") {
+      localStorage.removeItem("eyeclinic_doctors_dirty");
     }
   }
 
