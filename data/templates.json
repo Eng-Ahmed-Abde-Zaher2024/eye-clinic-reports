@@ -3,40 +3,76 @@
     "id": "t_general_exam",
     "name": "تقرير فحص عيون عام",
     "category": "كشف عام",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
-        "label": "اسم المريض"
+        "label": "اسم المريض",
+        "type": "text",
+        "options": ""
       },
       {
         "key": "age",
-        "label": "السن"
+        "label": "السن",
+        "type": "text",
+        "options": ""
       },
       {
         "key": "date",
-        "label": "التاريخ"
+        "label": "التاريخ",
+        "type": "text",
+        "options": ""
       },
       {
         "key": "eye",
-        "label": "العين محل الفحص"
+        "label": "العين محل الفحص",
+        "type": "text",
+        "options": ""
       },
       {
         "key": "diagnosis",
-        "label": "التشخيص"
+        "label": "التشخيص",
+        "type": "text",
+        "options": ""
       },
       {
         "key": "rest_days",
-        "label": "مدة الراحة الطبية (مثل: 3 أيام)"
+        "label": "مدة الراحة الطبية (مثل: 3 أيام)",
+        "type": "text",
+        "options": ""
+      },
+      {
+        "key": "test",
+        "label": "العنوان",
+        "type": "text",
+        "options": ""
+      },
+      {
+        "key": "lastoff",
+        "label": "تاريخ اخر مده",
+        "type": "date",
+        "options": ""
+      },
+      {
+        "key": "new_off",
+        "label": "من الاجازه السابقه الي",
+        "type": "date",
+        "options": ""
+      },
+      {
+        "key": "p_status",
+        "label": "حالة المريض",
+        "type": "select",
+        "options": "تعبان,تعبان جدا, طبيعي"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين محل الفحص:</strong> {{eye}}</p><p>تم إجراء فحص شامل لقاع العين وقياس ضغط العين وحدة الإبصار، وقد تبين الآتي:</p><p><strong>التشخيص:</strong> {{diagnosis}}</p><p><strong>الراحة الطبية:</strong> يحتاج المريض إلى راحة طبية لمدة <strong>{{rest_days}}</strong> اعتبارات لراحة العين وعدم الإجهاد.</p>"
+    "bodyHtml": "<p>اسم المريض: {{name}}</p><p>السن: {{age}} سنة</p><p>التاريخ: {{date}}</p><p>العين محل الفحص: {{eye}}</p><p>تم إجراء فحص شامل لقاع العين وقياس ضغط العين وحدة الإبصار، وقد تبين الآتي:</p><p>التشخيص: {{diagnosis}}</p><p>الراحة الطبية: يحتاج المريض إلى راحة طبية لمدة {{rest_days}} اعتبارات لراحة العين وعدم الإجهاد</p><p>العنوان: {{test}}</p><p>تاريخ اخر مده: {{lastoff}}</p><p>من الاجازه السابقه الي: {{new_off}}</p><p>حالة المريض: {{p_status}}</p><p>.</p>"
   },
   {
     "id": "t_sick_leave",
     "name": "تقرير إجازة مرضية وراحة طبية",
     "category": "إجازات وراحة",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -69,7 +105,7 @@
     "id": "t_lasik_op",
     "name": "تقرير عملية الليزك وتصحيح الإبصار",
     "category": "الليزك والجراحات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -106,7 +142,7 @@
     "id": "t_cataract",
     "name": "تقرير جراحة المياه البيضاء وزرع عدسة",
     "category": "الجراحات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -147,7 +183,7 @@
     "id": "t_glaucoma",
     "name": "تقرير فحص المياه الزرقاء (الجلوكوما)",
     "category": "الفحوصات المتخصصة",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -174,13 +210,13 @@
         "label": "نتيجة مجال الإبصار"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p>تم تقييم حالة المياه الزرقاء ومتابعة ضغط العين والعصب البصري وكان الفحص كالآتي:</p><p><strong>قياس ضغط العين اليمنى (IOP OD):</strong> {{iop_right}} mmHg &nbsp;&nbsp; <strong>العين اليسرى (IOP OS):</strong> {{iop_left}} mmHg</p><p><strong>نتائج فحص مجال الإبصار (Visual Field):</strong> {{field_test}}</p><p><strong>الخطة العلاجية والقطرات:</strong> {{treatment}}</p>"
+    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p>تم تقييم حالة المياه الزرقاء ومتابعة ضغط العين والعصب البصري وكان الفحص كالآتي:</p><p><strong>قياس ضغط العين اليمنى (IOP OD):</strong> {{iop_right}} mmHg &nbsp;&nbsp; <strong>العين اليسرى (IOP OS):</strong> {{iop_left}} mmHg</p><p><strong>نتائج فحص مجال الإبصار (Visual Field):</strong> {{field_test}}</p>"
   },
   {
     "id": "t_diabetic_retina",
     "name": "تقرير متابعة اعتلال الشبكية السكري",
     "category": "الشبكية",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -217,7 +253,7 @@
     "id": "t_refraction",
     "name": "تقرير قياس كشف النظارة الطبية",
     "category": "النظارات والقياسات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -266,7 +302,7 @@
     "id": "t_crosslinking",
     "name": "تقرير تثبيت القرنية المخروطية",
     "category": "القرنية",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -303,7 +339,7 @@
     "id": "t_retinal_injection",
     "name": "تقرير حقن شبكية العين (Anti-VEGF)",
     "category": "الشبكية",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -344,7 +380,7 @@
     "id": "t_conjunctivitis",
     "name": "تقرير التهاب ملتحمة العين والراحة الوقائية",
     "category": "التهابات وعدوى",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -371,13 +407,13 @@
         "label": "مدة الراحة والرمز الوقائي (مثل: 4 أيام)"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تبين بعد الفحص الإكلينيكي إصابة المريض بـ: <strong>{{contagious_type}}</strong> (التهاب ملتحمة العين).</p><p><strong>العلاج المقترح:</strong> {{treatment}}</p><p><strong>تنبيه وراحة وقائية:</strong> نظراً لأن الحالة قد تكون معدية وتستلزم راحة العين، يوصى بالابتعاد عن العمل ومكان الدراسة لمدة <strong>{{rest_days}}</strong> لتجنب العدوى والتعافي.</p>"
+    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>التاريخ:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تبين بعد الفحص الإكلينيكي إصابة المريض بـ: <strong>{{contagious_type}}</strong> (التهاب ملتحمة العين).</p><p><strong>تنبيه وراحة وقائية:</strong> نظراً لأن الحالة قد تكون معدية وتستلزم راحة العين، يوصى بالابتعاد عن العمل ومكان الدراسة لمدة <strong>{{rest_days}}</strong> لتجنب العدوى والتعافي.</p>"
   },
   {
     "id": "t_pterygium",
     "name": "تقرير استئصال الظفرة (اللحمية بالعين)",
     "category": "الجراحات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -404,13 +440,13 @@
         "label": "مدة الراحة الموصى بها (مثل: أسبوع)"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم استئصال الظفرة الملتحمية (Pterygium Excision) بنجاح مع ترقيع الملتحمة الذاتي: <strong>{{graft_type}}</strong>.</p><p><strong>علاج المتابعة:</strong> {{treatment}}</p><p><strong>الراحة الموصى بها:</strong> يستلزم الوضع راحة طبية وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع الأتربة والغبار.</p>"
+    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ العملية:</strong> {{date}}</p><p><strong>العين محل الجراحة:</strong> {{eye}}</p><p>تم استئصال الظفرة الملتحمية (Pterygium Excision) بنجاح مع ترقيع الملتحمة الذاتي: <strong>{{graft_type}}</strong>.</p><p><strong>الراحة الموصى بها:</strong> يستلزم الوضع راحة طبية وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع الأتربة والغبار.</p>"
   },
   {
     "id": "t_dcr",
     "name": "تقرير جراحة تسليك انسداد القناة الدمعية",
     "category": "الجراحات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -447,7 +483,7 @@
     "id": "t_strabismus",
     "name": "تقرير جراحة إصلاح الحول",
     "category": "حول وجراحة أطفال",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -484,7 +520,7 @@
     "id": "t_dry_eye",
     "name": "تقرير تقييم جفاف العين الشديد",
     "category": "الفحوصات المتخصصة",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -517,7 +553,7 @@
     "id": "t_corneal_abrasion",
     "name": "تقرير إصابة وخدش بالقرنية (طوارئ)",
     "category": "طوارئ وإصابات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -544,13 +580,13 @@
         "label": "مدة الراحة الطبية (مثل: 4 أيام)"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ المعاينة:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>حضر المريض إلى قسم الطوارئ وتبين وجود خدش سطحي في القرنية (Corneal Abrasion) نتيجة: <strong>{{cause}}</strong>.</p><p><strong>الإجراء والعلاج:</strong> تم عمل غيار معقم ووضع عدسة لاصقة ضمادية أو مراهم مضادة: {{treatment}}.</p><p><strong>الإجازة والراحة الطبية:</strong> نظراً لألم الخدش وحاجة النسيج التغطوي للاحتيام، يُمنح المريض راحة طبية لمدة <strong>{{rest_days}}</strong>.</p>"
+    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ المعاينة:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>حضر المريض إلى قسم الطوارئ وتبين وجود خدش سطحي في القرنية (Corneal Abrasion) نتيجة: <strong>{{cause}}</strong>.</p><p><strong>الإجازة والراحة الطبية:</strong> نظراً لألم الخدش وحاجة النسيج التغطوي للاحتيام، يُمنح المريض راحة طبية لمدة <strong>{{rest_days}}</strong>.</p>"
   },
   {
     "id": "t_oct_scan",
     "name": "تقرير فحص قاع العين بالأشعة المقطعية OCT",
     "category": "فحوصات وأشعة",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -587,7 +623,7 @@
     "id": "t_retinal_detachment",
     "name": "تقرير جراحة انفصال الشبكية",
     "category": "الشبكية",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -624,7 +660,7 @@
     "id": "t_visual_fitness",
     "name": "تقرير تقييم اللياقة البصرية والقيادة",
     "category": "تقارير رسمية",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -661,7 +697,7 @@
     "id": "t_foreign_body",
     "name": "تقرير إزالة جسم غريب من القرنية",
     "category": "طوارئ وإصابات",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
@@ -688,13 +724,13 @@
         "label": "مدة الراحة الطبية (مثل: 3 أيام)"
       }
     ],
-    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تمت إزالة جسم غريب (<strong>{{object_type}}</strong>) من طبقة القرنية السطحية تحت البنج الموضعي وتنظيف حلقة الصدأ (Rust Ring).</p><p><strong>العلاج الموصوف:</strong> {{treatment}}</p><p><strong>فترة الراحة الطبية:</strong> يحتاج المريض إلى راحة وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع التلوث والتئام القرنية.</p>"
+    "bodyHtml": "<p><strong>اسم المريض:</strong> {{name}}</p><p><strong>السن:</strong> {{age}} سنة</p><p><strong>تاريخ الإجراء:</strong> {{date}}</p><p><strong>العين المصابة:</strong> {{eye}}</p><p>تمت إزالة جسم غريب (<strong>{{object_type}}</strong>) من طبقة القرنية السطحية تحت البنج الموضعي وتنظيف حلقة الصدأ (Rust Ring).</p><p><strong>فترة الراحة الطبية:</strong> يحتاج المريض إلى راحة وتغطية العين لمدة <strong>{{rest_days}}</strong> لمنع التلوث والتئام القرنية.</p>"
   },
   {
     "id": "t_amblyopia",
     "name": "تقرير تقييم كسل العين وعلاج الأطفال",
     "category": "حول وجراحة أطفال",
-    "createdAt": "2026-08-11T12:00:00.000Z",
+    "createdAt": "2026-08-14T12:38:06.095Z",
     "fields": [
       {
         "key": "name",
