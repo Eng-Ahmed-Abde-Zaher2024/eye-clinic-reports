@@ -135,9 +135,13 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               تصدير القوالب كإكسل
             </button>
+            <button class="btn btn-outline btn-sm" id="btnExportTemplatesJson" title="تصدير القوالب فقط كملف JSON لرفعه على جيت هب">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              تصدير templates.json
+            </button>
             <button class="btn btn-outline btn-sm" id="btnExportJson">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-              تصدير ملفات JSON لـ جيت هب
+              تصدير الكل JSON لـ جيت هب
             </button>
           </div>
 
@@ -156,7 +160,13 @@
     <div class="tab-panel" id="tab-users">
       <div class="grid-2">
         <div class="card">
-          <h3>المستخدمون الحاليون</h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <h3 style="margin:0;">المستخدمون الحاليون</h3>
+            <button class="btn btn-outline btn-sm" id="btnExportUsersJson" title="تصدير المستخدمين فقط كملف JSON لرفعه على جيت هب">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              تصدير users.json
+            </button>
+          </div>
           <div id="usersList" style="margin-top:14px;"></div>
         </div>
         <div class="card">
@@ -193,10 +203,16 @@
 
         <!-- يمين: قائمة الأطباء + إضافة -->
         <div class="card">
-          <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-left:6px;"><path d="M4.8 2.3A.3.3 0 0 0 4.5 2h-1a.3.3 0 0 0-.3.3v7.2a4.5 4.5 0 0 0 9 0V2.3a.3.3 0 0 0-.3-.3h-1a.3.3 0 0 0-.3.3v7.2a2.7 2.7 0 0 1-5.4 0V2.3z"/><path d="M8 13.7v3.8a2.5 2.5 0 0 0 5 0v-1"/><circle cx="18" cy="16" r="3"/></svg>
-            قائمة الأطباء
-          </h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+            <h3 style="margin:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-left:6px;"><path d="M4.8 2.3A.3.3 0 0 0 4.5 2h-1a.3.3 0 0 0-.3.3v7.2a4.5 4.5 0 0 0 9 0V2.3a.3.3 0 0 0-.3-.3h-1a.3.3 0 0 0-.3.3v7.2a2.7 2.7 0 0 1-5.4 0V2.3z"/><path d="M8 13.7v3.8a2.5 2.5 0 0 0 5 0v-1"/><circle cx="18" cy="16" r="3"/></svg>
+              قائمة الأطباء
+            </h3>
+            <button class="btn btn-outline btn-sm" id="btnExportDoctorsJson" title="تصدير الأطباء فقط كملف JSON لرفعه على جيت هب">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              تصدير doctors.json
+            </button>
+          </div>
           <p style="font-size:13px;color:var(--text-dim);margin:8px 0 16px;">
             أضف أطباء العيادة — ستظهر كقائمة منسدلة عند إصدار التقرير.
           </p>
@@ -221,10 +237,16 @@
 
         <!-- يسار: إعدادات العيادة -->
         <div class="card">
-          <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-left:6px;"><path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"></path><path d="M10 9h4"></path><path d="M12 7v4"></path></svg>
-            إعدادات العيادة
-          </h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:4px;">
+            <h3 style="margin:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-left:6px;"><path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"></path><path d="M10 9h4"></path><path d="M12 7v4"></path></svg>
+              إعدادات العيادة
+            </h3>
+            <button class="btn btn-outline btn-sm" id="btnExportClinicJson" title="تصدير إعدادات العيادة فقط كملف JSON لرفعه على جيت هب">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              تصدير clinic.json
+            </button>
+          </div>
           <p style="font-size:13px;color:var(--text-dim);margin:8px 0 16px;">
             اسم العيادة الذي يظهر في هيدر وفوتر التقرير.
           </p>
