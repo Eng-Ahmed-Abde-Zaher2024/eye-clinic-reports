@@ -6,6 +6,29 @@
 const AccessControl = (() => {
   const STORAGE_KEY = 'eyeclinic_access_control';
 
+  // ══════════════════════════════════════════════════════════════
+  // 🛡️ قائمة الأجهزة المسموح لها دائماً (Super Whitelist)
+  //    هذه الأجهزة لا تتأثر بأي نوع حظر — لا blacklist ولا whitelist ولا IP
+  //    مدمجة في الكود مباشرة — لا يمكن تعديلها من localStorage أو السيرفر
+  // ══════════════════════════════════════════════════════════════
+  const ALWAYS_ALLOWED_DEVICES = [
+    'dev_9pgwtjhmss'   // 🖥️ جهاز المطور الشخصي — مسموح دائماً
+  ];
+
+  /**
+   * يتحقق إذا كان الجهاز الحالي من الأجهزة المسموح لها دائماً
+   * يقارن بداية الـ device ID مع القائمة (prefix match)
+   */
+  function isAlwaysAllowed() {
+    try {
+      const deviceId = (localStorage.getItem('eyeclinic_device_id') || '').toLowerCase().trim();
+      if (!deviceId) return false;
+      return ALWAYS_ALLOWED_DEVICES.some(prefix => deviceId.startsWith(prefix.toLowerCase()));
+    } catch (_) {
+      return false;
+    }
+  }
+
   // الإعدادات الافتراضية
   const defaultConfig = {
     enabled: true,
@@ -35,7 +58,7 @@ const AccessControl = (() => {
   function saveConfig(cfg) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // الحصول على معرف الفريد للجهاز/المستخدم الحالي
@@ -47,7 +70,7 @@ const AccessControl = (() => {
       if (session && session.username) {
         list.push(session.username.toLowerCase());
       }
-    } catch (_) {}
+    } catch (_) { }
 
     let deviceId = localStorage.getItem('eyeclinic_device_id');
     if (!deviceId) {
@@ -66,6 +89,10 @@ const AccessControl = (() => {
 
   function isBlockedByConfig(cfg) {
     if (!cfg || cfg.enabled === false) return false;
+
+    // 🛡️ الأجهزة المسموح لها دائماً — لا تتحظر أبداً مهما كان
+    if (isAlwaysAllowed()) return false;
+
     const identifiers = getClientIdentifiers().map(i => String(i).toLowerCase().trim());
     if (identifiers.length === 0) return false;
 
@@ -207,9 +234,9 @@ const AccessControl = (() => {
   function fetchFromServer(onDone) {
     var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
     var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
-                     VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
-                  ? VISITOR_SCRIPT_URL
-                  : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
+      VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
+      ? VISITOR_SCRIPT_URL
+      : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
 
     if (!scriptUrl) { if (onDone) onDone(null); return; }
 
@@ -219,8 +246,8 @@ const AccessControl = (() => {
       method: 'GET',
       cache: 'no-store'
     })
-      .then(function(r) { return r.json(); })
-      .then(function(serverCfg) {
+      .then(function (r) { return r.json(); })
+      .then(function (serverCfg) {
         if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
           saveConfig(serverCfg);
           if (onDone) onDone(serverCfg);
@@ -261,7 +288,7 @@ const AccessControl = (() => {
     // ② اجلب الـ config من السيرفر عبر POST (بدون cache)
     //    قرار السيرفر هو النهائي ويطغى على الكاش المحلي
     // ======================================================
-    fetchFromServer(function(serverCfg) {
+    fetchFromServer(function (serverCfg) {
       applyServerDecision(serverCfg);
     });
   }
@@ -272,8 +299,8 @@ const AccessControl = (() => {
   // ======================================================
   (function startPeriodicCheck() {
     if (/trace\.html/i.test(location.pathname)) return;
-    setInterval(function() {
-      fetchFromServer(function(serverCfg) {
+    setInterval(function () {
+      fetchFromServer(function (serverCfg) {
         applyServerDecision(serverCfg);
       });
     }, 10000); // كل 10 ثوانٍ
