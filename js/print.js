@@ -21,10 +21,14 @@ $(async function () {
     // إعدادات المعاينة والطباعة (للطباعة على ورق ألوان)
     // إذا كان الخيار محدداً (true): يظهر في المعاينة ويختفي عند الطباعة (hide-on-print)
     // إذا كان ملغياً (false): يختفي تماماً في المعاينة والطباعة (hidden-always)
-    togglePrintElement("#headerLogo",     clinic.printLogo);
-    togglePrintElement(".a4-header",      clinic.printHeader);
-    togglePrintElement(".a4-footer",      clinic.printFooter);
-    togglePrintElement("#watermarkImg",   clinic.printWatermark);
+    togglePrintElement("#headerLogo", clinic.printLogo);
+    togglePrintElement(".a4-header", clinic.printHeader);
+    togglePrintElement(".a4-footer", clinic.printFooter);
+    togglePrintElement("#watermarkImg", clinic.printWatermark);
+
+    // تطبيق إزاحة المحتوى لأسفل عند الطباعة
+    const offset = (clinic.printOffsetTop !== undefined && clinic.printOffsetTop !== null) ? Number(clinic.printOffsetTop) : 0;
+    document.documentElement.style.setProperty("--print-top-offset", offset + "mm");
   }
 
   function togglePrintElement(selector, isPreviewOnly) {
@@ -100,42 +104,43 @@ $(async function () {
       $form.append(`<div class="empty-fields-note">اختر قالبًا لعرض الحقول الخاصة به.</div>`);
       return;
     }
-    const today = new Date().toLocaleDateString("ar-EG");
 
     (currentTemplate.fields || []).forEach((f) => {
-      const isDate = /تاريخ|date/i.test(f.key + f.label);
-      const isEye = /عين|eye/i.test(f.key + f.label);
+      const fieldType = (f.type || "text").toLowerCase();
 
-      if (isDate) {
-        // حقل تاريخ → date picker (كليندر)
-        const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        $form.append(`
-          <div class="field">
-            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
-            <input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" required />
-          </div>
-        `);
-      } else if (isEye) {
-        $form.append(`
-          <div class="field">
-            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
-            <select class="dyn-input" data-key="${escapeHtml(f.key)}" required>
-              <option value="">— اختر —</option>
-              <option value="اليمنى">اليمنى</option>
-              <option value="اليسرى">اليسرى</option>
-              <option value="كلتا العينين">كلتا العينين</option>
-              <option value="لا يوجد">لا يوجد</option>
-            </select>
-          </div>
-        `);
+      let inputHtml = "";
+
+      if (fieldType === "date") {
+        const todayISO = new Date().toISOString().slice(0, 10);
+        inputHtml = `<input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" required />`;
+
+      } else if (fieldType === "textarea") {
+        inputHtml = `<textarea class="dyn-input" data-key="${escapeHtml(f.key)}" rows="3" placeholder="مطلوب..." required></textarea>`;
+
+      } else if (fieldType === "number") {
+        inputHtml = `<input type="number" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />`;
+
+      } else if (fieldType === "select") {
+        const rawOpts = (f.options || "").split(",").map(o => o.trim()).filter(Boolean);
+        const optionsHtml = rawOpts.length
+          ? rawOpts.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")
+          : `<option value="يمنى">يمنى</option><option value="يسرى">يسرى</option><option value="كلتا العينين">كلتا العينين</option>`;
+        inputHtml = `<select class="dyn-input" data-key="${escapeHtml(f.key)}" required>
+          <option value="">— اختر —</option>
+          ${optionsHtml}
+        </select>`;
+
       } else {
-        $form.append(`
-          <div class="field">
-            <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
-            <input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />
-          </div>
-        `);
+        // text (default / legacy)
+        inputHtml = `<input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />`;
       }
+
+      $form.append(`
+        <div class="field">
+          <label>${escapeHtml(f.label)} <span style="color:var(--danger)">*</span></label>
+          ${inputHtml}
+        </div>
+      `);
     });
 
     $form.on("input change", ".dyn-input", function () {
@@ -175,7 +180,13 @@ $(async function () {
     (currentTemplate.fields || []).forEach((f) => {
       const re = new RegExp("{{\\s*" + escapeRegex(f.key) + "\\s*}}", "g");
       const val = values[f.key];
-      const safeVal = (val !== undefined && val !== "") ? escapeHtml(val) : `<span style="color:#888;">[${escapeHtml(f.label)}]</span>`;
+      let safeVal;
+      if (val !== undefined && val !== "") {
+        // تحويل الأسطر الجديدة في نصوص textarea إلى <br> لعرضها سليماً في معاينة A4
+        safeVal = escapeHtml(val).replace(/\n/g, "<br>");
+      } else {
+        safeVal = `<span style="color:#888;">[${escapeHtml(f.label)}]</span>`;
+      }
       html = html.replace(re, safeVal);
     });
 

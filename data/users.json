@@ -12,12 +12,6 @@
     "password": "01118659824",
     "fullName": "موظف الاستقبال",
     "role": "agent"
-  },
-  {
-    "fullName": "Normal user",
-    "username": "user123",
-    "password": "user123",
-    "role": "agent",
-    "id": "u_mssxetaw9ce1g"
   }
 ]
+   

@@ -10,14 +10,33 @@ $(async function () {
   // جلب أحدث ملفات JSON من جيت هب عند التحميل
   await DB.init();
 
-  // ---------------- Tabs ----------------
+  // ---------------- Tabs Management (مع تذكر التاب النشط عند الـ Refresh) ----------------
+  function activateTab(tab) {
+    if (!tab) return;
+    const $btn = $(`.tab-btn[data-tab="${tab}"]`);
+    const $panel = $(`#tab-${tab}`);
+    if ($btn.length && $panel.length) {
+      $(".tab-btn").removeClass("active");
+      $btn.addClass("active");
+      $(".tab-panel").removeClass("active");
+      $panel.addClass("active");
+      try {
+        sessionStorage.setItem("eyeclinic_admin_tab", tab);
+        history.replaceState(null, null, "#" + tab);
+      } catch (_) {}
+    }
+  }
+
   $(".tab-btn").on("click", function () {
     const tab = $(this).data("tab");
-    $(".tab-btn").removeClass("active");
-    $(this).addClass("active");
-    $(".tab-panel").removeClass("active");
-    $("#tab-" + tab).addClass("active");
+    activateTab(tab);
   });
+
+  // استعادة التاب النشط فوراً عند فتح الصفحة أو عمل Refresh
+  const initialTab = (location.hash ? location.hash.replace("#", "") : "") || sessionStorage.getItem("eyeclinic_admin_tab");
+  if (initialTab) {
+    activateTab(initialTab);
+  }
 
   function showToast(msg, isErr) {
     const $t = $("#toast").text(msg).removeClass("err");
@@ -191,13 +210,31 @@ $(async function () {
   }
 
   function addFieldRow(field, autoFocus) {
-    const key = field ? field.key : "";
-    const label = field ? field.label : "";
+    const key     = field ? (field.key     || "") : "";
+    const label   = field ? (field.label   || "") : "";
+    const type    = field ? (field.type    || "text") : "text";
+    const options = field ? (field.options || "") : "";
+
+    const typeOptions = [
+      { val: "text",     lbl: "نص قصير" },
+      { val: "textarea", lbl: "فقرة / نص طويل" },
+      { val: "number",   lbl: "رقم" },
+      { val: "date",     lbl: "تاريخ" },
+      { val: "select",   lbl: "قائمة منسدلة" }
+    ];
+    const typeSelectHtml = typeOptions
+      .map(o => `<option value="${o.val}"${type === o.val ? " selected" : ""}>${o.lbl}</option>`)
+      .join("");
+
+    const optionsDisplay = (type === "select") ? "" : "display:none;";
+
     const $row = $(`
       <div class="dyn-field-row" data-prev-key="${escapeHtml(key)}" data-prev-label="${escapeHtml(label)}">
-        <input type="text" class="fld-key" placeholder="key (بالإنجليزية)" value="${escapeHtml(key)}" />
-        <input type="text" class="fld-label" placeholder="اسم الحقل (يظهر للموظف)" value="${escapeHtml(label)}" />
-        <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل والاسم العربي عند موضع المؤشر الحالي">
+        <input type="text" class="fld-key" placeholder="key (إنجليزي)" value="${escapeHtml(key)}" />
+        <input type="text" class="fld-label" placeholder="اسم الحقل (للموظف)" value="${escapeHtml(label)}" />
+        <select class="fld-type" title="نوع الحقل">${typeSelectHtml}</select>
+        <input type="text" class="fld-options" placeholder="خيارات مفصولة بفاصلة (مثال: اليمنى,اليسرى)" value="${escapeHtml(options)}" style="${optionsDisplay}" />
+        <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل في نص القالب">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
           إدراج
         </button>
@@ -207,6 +244,12 @@ $(async function () {
       </div>
     `);
     $("#tpl_fields").append($row);
+
+    // إظهار/إخفاء حقل الخيارات عند تغيير النوع
+    $row.find(".fld-type").on("change", function () {
+      const isSelect = $(this).val() === "select";
+      $row.find(".fld-options").toggle(isSelect);
+    });
 
     if (autoFocus) {
       $row.find(".fld-key").focus();
@@ -332,9 +375,11 @@ $(async function () {
     e.preventDefault();
     const fields = [];
     $("#tpl_fields .dyn-field-row").each(function () {
-      const key = $(this).find(".fld-key").val().trim();
-      const label = $(this).find(".fld-label").val().trim();
-      if (key && label) fields.push({ key, label });
+      const key     = $(this).find(".fld-key").val().trim();
+      const label   = $(this).find(".fld-label").val().trim();
+      const type    = $(this).find(".fld-type").val() || "text";
+      const options = $(this).find(".fld-options").val().trim();
+      if (key && label) fields.push({ key, label, type, options });
     });
 
     if (fields.length === 0) {
@@ -372,15 +417,22 @@ $(async function () {
 
   /* ---------------- Excel export/import ---------------- */
   function serializeFields(fields) {
-    return (fields || []).map((f) => `${f.key}|${f.label}`).join(";");
+    // صيغة: key|label|type|options
+    return (fields || []).map((f) => `${f.key}|${f.label}|${f.type || "text"}|${f.options || ""}`).join(";");
   }
   function deserializeFields(str) {
     if (!str) return [];
     return String(str)
       .split(";")
       .map((chunk) => chunk.split("|"))
-      .filter((p) => p.length === 2)
-      .map(([key, label]) => ({ key: key.trim(), label: label.trim() }));
+      .filter((p) => p.length >= 2)
+      .map((p) => ({
+        key:     (p[0] || "").trim(),
+        label:   (p[1] || "").trim(),
+        type:    (p[2] || "text").trim() || "text",
+        options: (p[3] || "").trim()
+      }))
+      .filter((f) => f.key && f.label);
   }
 
   /* ============================================================
@@ -437,17 +489,19 @@ $(async function () {
     templates.forEach(t => {
       (t.fields || []).forEach((f, fi) => {
         fieldRows.push({
-          "اسم القالب":   t.name,
-          "التصنيف":      t.category || "",
-          "رقم الحقل":    fi + 1,
-          "مفتاح الحقل":  f.key,
-          "اسم الحقل (للموظف)": f.label
+          "اسم القالب":          t.name,
+          "التصنيف":             t.category || "",
+          "رقم الحقل":           fi + 1,
+          "مفتاح الحقل":         f.key,
+          "اسم الحقل (للموظف)": f.label,
+          "نوع الحقل":           f.type || "text",
+          "خيارات القائمة":      f.options || ""
         });
       });
     });
 
     const wsFields = XLSX.utils.json_to_sheet(fieldRows, {
-      header: ["اسم القالب", "التصنيف", "رقم الحقل", "مفتاح الحقل", "اسم الحقل (للموظف)"]
+      header: ["اسم القالب", "التصنيف", "رقم الحقل", "مفتاح الحقل", "اسم الحقل (للموظف)", "نوع الحقل", "خيارات القائمة"]
     });
 
     wsFields["!cols"] = [
@@ -455,10 +509,12 @@ $(async function () {
       { wch: 16 },  // التصنيف
       { wch: 10 },  // رقم الحقل
       { wch: 20 },  // مفتاح الحقل
-      { wch: 28 }   // اسم الحقل
+      { wch: 28 },  // اسم الحقل
+      { wch: 14 },  // نوع الحقل
+      { wch: 36 }   // خيارات القائمة
     ];
 
-    const fieldHeaders = ["A1","B1","C1","D1","E1"];
+    const fieldHeaders = ["A1","B1","C1","D1","E1","F1","G1"];
     fieldHeaders.forEach(ref => {
       if (!wsFields[ref]) return;
       wsFields[ref].s = {
@@ -798,7 +854,17 @@ $(async function () {
     $("#s_showHeader").prop("checked",    c.printHeader    !== false);
     $("#s_showFooter").prop("checked",    c.printFooter    !== false);
     $("#s_showWatermark").prop("checked", c.printWatermark !== false);
+
+    const offset = (c.printOffsetTop !== undefined && c.printOffsetTop !== null) ? Number(c.printOffsetTop) : 0;
+    $("#s_printOffsetTop").val(offset);
+    $("#offsetValBadge").text(offset + " mm");
   }
+
+  // تحديث فوري لقيمة الإزاحة عند تحريك السلايدر
+  $("#s_printOffsetTop").on("input", function () {
+    const val = $(this).val();
+    $("#offsetValBadge").text(val + " mm");
+  });
 
   $("#settingsForm").on("submit", function (e) {
     e.preventDefault();
@@ -807,7 +873,8 @@ $(async function () {
       printLogo:      $("#s_showLogo").is(":checked"),
       printHeader:    $("#s_showHeader").is(":checked"),
       printFooter:    $("#s_showFooter").is(":checked"),
-      printWatermark: $("#s_showWatermark").is(":checked")
+      printWatermark: $("#s_showWatermark").is(":checked"),
+      printOffsetTop: Number($("#s_printOffsetTop").val()) || 0
     });
 
     // فتح بوب-أب النجاح (Save Success Modal)

@@ -333,6 +333,26 @@
               </label>
             </div>
 
+            <!-- سلايدر إزاحة المحتوى من الأعلى (Progress Slider) -->
+            <div style="margin-top:18px; background:var(--paper); padding:14px 16px; border-radius:12px; border:1.5px solid var(--line);">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <label style="font-size:13px; font-weight:700; color:var(--navy); display:flex; align-items:center; gap:6px; margin:0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                  إزاحة المحتوى لأسفل عند الطباعة:
+                </label>
+                <span id="offsetValBadge" style="background:var(--blue); color:#fff; font-weight:800; font-size:13px; padding:3px 12px; border-radius:20px; font-family:monospace;">0 mm</span>
+              </div>
+              <input type="range" id="s_printOffsetTop" min="0" max="100" step="1" value="0" style="width:100%; cursor:pointer; accent-color:var(--blue);" />
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-top:2px;">
+                <span>0 mm (بداية الصفحة)</span>
+                <span>50 mm</span>
+                <span>100 mm</span>
+              </div>
+              <small style="color:var(--text-dim); font-size:11.5px; display:block; margin-top:6px; line-height:1.4;">
+                اسحب الشريط لتحديد مسافة نزول عنوان التقرير لأسفل عند الطباعة ليتوافق مع ورق العيادة المروّس المطبوع سلفاً.
+              </small>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
               حفظ الإعدادات

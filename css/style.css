@@ -1229,10 +1229,16 @@ a {
 .a4-body {
   font-size: 14px;
   line-height: 2.15;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .a4-body p {
   margin: 0 0 10px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .a4-body strong {
@@ -1426,14 +1432,40 @@ a {
 .dyn-field-row {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
-.dyn-field-row input {
-  flex: 1;
-  min-width: 0;
+.dyn-field-row .fld-key {
+  flex: 1 1 110px;
+  min-width: 90px;
+}
+
+.dyn-field-row .fld-label {
+  flex: 2 1 140px;
+  min-width: 110px;
+}
+
+.dyn-field-row .fld-type {
+  flex: 0 0 112px;
+  min-width: 90px;
+  cursor: pointer;
+}
+
+.dyn-field-row .fld-options {
+  flex: 2 1 170px;
+  min-width: 120px;
+}
+
+/* textarea داخل نموذج إصدار التقرير */
+.dyn-input[rows],
+textarea.dyn-input {
+  resize: vertical;
+  min-height: 68px;
+  line-height: 1.75;
+  font-family: inherit;
+  padding: 8px 12px;
 }
 
 /* ── Mobile: Modal becomes bottom sheet ── */
@@ -1486,8 +1518,11 @@ a {
     flex-wrap: wrap;
   }
 
-  .dyn-field-row input {
-    flex: 1 1 120px;
+  .dyn-field-row .fld-key,
+  .dyn-field-row .fld-label,
+  .dyn-field-row .fld-type,
+  .dyn-field-row .fld-options {
+    flex: 1 1 100%;
   }
 }
 
@@ -1634,6 +1669,11 @@ a {
   /* hide/show elements based on print settings */
   .hide-on-print {
     display: none !important;
+  }
+
+  /* إزاحة المحتوى لأسفل عند الطباعة */
+  .a4-title {
+    margin-top: var(--print-top-offset, 0mm) !important;
   }
 }
 

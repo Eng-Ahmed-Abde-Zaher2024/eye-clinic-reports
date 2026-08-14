@@ -13,12 +13,12 @@ function saveConfigToServer(cfg) {
   if (!APPS_SCRIPT_GET_URL || APPS_SCRIPT_GET_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
   try {
     fetch(APPS_SCRIPT_GET_URL + '?action=saveConfig', {
-      method:  'POST',
-      mode:    'no-cors',
+      method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify(cfg)
+      body: JSON.stringify(cfg)
     });
-  } catch(_) {}
+  } catch (_) { }
 }
 
 $(async function () {
@@ -34,7 +34,7 @@ $(async function () {
   /* — اعتراض saveConfig لإرسالها للسيرفر عند كل تغيير — */
   if (typeof AccessControl !== 'undefined') {
     var _origSave = AccessControl.saveConfig.bind(AccessControl);
-    AccessControl.saveConfig = function(cfg) {
+    AccessControl.saveConfig = function (cfg) {
       _origSave(cfg);
       saveConfigToServer(cfg); // تحديث فوري للسيرفر
     };
@@ -47,11 +47,11 @@ $(async function () {
       await DB.init();
     }
     var users = (typeof DB !== "undefined" && DB.Users) ? DB.Users.all() : [];
-    
+
     // التحقق من كلمة السر ديناميكياً من بيانات المستخدمين المخزنة
-    var valid = users.some(function(u) {
+    var valid = users.some(function (u) {
       return u.role === "admin" && (
-        u.password === pass || 
+        u.password === pass ||
         u.username.trim().toLowerCase() === pass.toLowerCase()
       );
     });
@@ -68,15 +68,15 @@ $(async function () {
         // مزامنة أحدث إعدادات الحظر من جوجل شيت فوراً
         if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
           fetch(APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=getConfig&_t=" + Date.now())
-            .then(function(r) { return r.json(); })
-            .then(function(serverCfg) {
+            .then(function (r) { return r.json(); })
+            .then(function (serverCfg) {
               if (serverCfg && serverCfg.mode && typeof AccessControl !== "undefined") {
                 AccessControl.saveConfig(serverCfg);
                 renderACUI();
                 renderTable();
               }
             })
-            .catch(function() {});
+            .catch(function () { });
         }
         renderACUI();
         loadVisits();
@@ -99,20 +99,86 @@ $(async function () {
     });
   });
 
+  /* ---------------- Normalize Records ---------------- */
+  function normalizeVisitRecord(v) {
+    if (!v || typeof v !== "object") return null;
+
+    var map = {};
+    Object.keys(v).forEach(function (k) {
+      map[k.toLowerCase().trim()] = v[k];
+    });
+
+    var page = map.page || map.url || map["الصفحة"] || v.page || v.Page || "index.html";
+    var device = map.device || map["الجهاز"] || v.device || v.Device || "Desktop";
+    var browser = map.browser || map["المتصفح"] || v.browser || v.Browser || "—";
+    var ip = map.ip || map.ipaddress || map["عنوان ip"] || v.ip || v.IP || "";
+    var devId = map.deviceid || map.device_id || map["معرف الجهاز"] || v.deviceId || v.deviceid || "";
+    var devName = map.devicename || map.device_name || map["اسم الجهاز"] || v.deviceName || v.devicename || "";
+    var username = map.username || map.user || map["المستخدم"] || map["اسم المستخدم"] || v.username || v.Username || "";
+    var fullName = map.fullname || map.full_name || map["الاسم الكامل"] || v.fullName || v.fullname || "";
+    var role = map.role || map["الصلاحية"] || v.role || v.Role || "";
+    var language = map.language || map["اللغة"] || v.language || v.Language || "";
+    var screen = map.screen || map["الشاشة"] || v.screen || v.Screen || "";
+
+    var rawTime = map.timestamp || map.time || map.date || map["الوقت"] || map["تاريخ الزيارة"] || v.timestamp || v.Timestamp || "";
+    var timestamp = "";
+    if (rawTime) {
+      try {
+        var d = new Date(rawTime);
+        timestamp = isNaN(d.getTime()) ? String(rawTime) : d.toISOString();
+      } catch (e) {
+        timestamp = String(rawTime);
+      }
+    } else {
+      timestamp = new Date().toISOString();
+    }
+
+    var loggedRaw = map.loggedin || map.logged_in || map.login || map["الحالة"] || v.loggedIn || v.loggedin || "";
+    var isLogged = (loggedRaw === true || loggedRaw === "YES" || String(loggedRaw).toUpperCase() === "YES" || Boolean(username && username !== "زائر مجهول"));
+
+    // Shift correction if IP got shifted to page column
+    if (page && /^(\d{1,3}\.){3}\d{1,3}$/.test(String(page).trim())) {
+      ip = String(page).trim();
+      devId = browser;
+      page = device;
+      browser = language || "Chrome";
+      device = "Mobile";
+    }
+
+    return {
+      timestamp: timestamp,
+      page: String(page || "index.html").trim(),
+      device: String(device || "Desktop").trim(),
+      browser: String(browser || "—").trim(),
+      ip: String(ip || "").trim(),
+      deviceId: String(devId || "").trim(),
+      deviceid: String(devId || "").trim(),
+      deviceName: String(devName || "").trim(),
+      devicename: String(devName || "").trim(),
+      loggedIn: isLogged,
+      loggedin: isLogged ? "YES" : "NO",
+      username: String(username || "").trim(),
+      fullName: String(fullName || "").trim(),
+      role: String(role || "").trim(),
+      language: String(language || "").trim(),
+      screen: String(screen || "").trim()
+    };
+  }
+
   /* ---------------- Fetch Visits ---------------- */
   function loadVisits() {
     $("#statusText").text("جاري جلب البيانات...");
 
     // إذا كان الرابط مضبوطاً، نحاول الجلب من Google Apps Script
     if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
-      var fetchUrl = APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=get";
+      var fetchUrl = APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=get&_t=" + Date.now();
       $.ajax({
         url: fetchUrl,
         type: "GET",
         dataType: "json",
         success: function (data) {
           if (Array.isArray(data)) {
-            allVisits = data;
+            allVisits = data.map(normalizeVisitRecord).filter(Boolean);
             $("#statusText").text("تم التحميل من Google Sheets بنجاح (" + allVisits.length + " زيارة)");
           } else {
             fallbackLocal();
@@ -130,7 +196,8 @@ $(async function () {
 
   function fallbackLocal() {
     try {
-      allVisits = JSON.parse(localStorage.getItem("eyeclinic_visits") || "[]");
+      var localData = JSON.parse(localStorage.getItem("eyeclinic_visits") || "[]");
+      allVisits = localData.map(normalizeVisitRecord).filter(Boolean);
       $("#statusText").text("ملاحظة: تُعرض زيارات المتصفح المحلي (قم بإعداد Google Sheets للجلب من كل الأجهزة). الإجمالي: " + allVisits.length);
     } catch (e) {
       allVisits = [];
@@ -732,19 +799,17 @@ $(async function () {
     $("#confirmOverlay").removeClass("open");
 
     if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
-      var clearUrl = APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=clear";
-      $.ajax({
-        url: clearUrl,
-        type: "GET",
-        dataType: "json",
-        success: function () {
-          alert("تم مسح جميع الزيارات من Google Sheets والمحلي بنجاح.");
-          loadVisits();
-        },
-        error: function () {
+      var clearUrl = APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=clear&_t=" + Date.now();
+      fetch(clearUrl, { method: "GET", mode: "no-cors" })
+        .then(function () {
+          setTimeout(function () {
+            alert("تم مسح جميع الزيارات من Google Sheets والمحلي بنجاح.");
+            loadVisits();
+          }, 2000);
+        })
+        .catch(function () {
           alert("تم مسح السجل المحلي بنجاح (ملاحظة: يمكنك إفراغ الصفوف يدوياً من ملف Google Sheet أيضاً).");
-        }
-      });
+        });
     } else {
       alert("تم مسح سجل الزيارات المحلي بنجاح.");
     }

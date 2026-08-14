@@ -4,5 +4,6 @@
   "printLogo": true,
   "printHeader": true,
   "printFooter": true,
-  "printWatermark": true
+  "printWatermark": true,
+  "printOffsetTop": 0
 }
