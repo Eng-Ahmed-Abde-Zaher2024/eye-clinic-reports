@@ -9,21 +9,27 @@ const AccessControl = (() => {
   // الإعدادات الافتراضية
   const defaultConfig = {
     enabled: true,
-    mode: 'blacklist', // 'blacklist' أو 'whitelist'
-    blacklist: [],     // قوائم الحظر (أسماء المستخدمين / المعرفات / الأجهزة)
-    whitelist: [],     // قائمة المسموح لهم فقط
+    mode: 'blacklist',
+    blacklist: [],
+    whitelist: [],
     subscriptionPhone: '01126611570',
     priceText: '100 ج.م شهرياً عبر انستا باي (InstaPay)',
     customNotice: 'تواصل مع إدارة النظام لتفعيل حسابك بعد التحويل.'
   };
 
-  function getConfig() {
+  // ── localStorage فقط للـ fallback (لو الشبكة وقعت) ──
+  function getLocalConfig() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? { ...defaultConfig, ...JSON.parse(raw) } : defaultConfig;
     } catch (_) {
       return defaultConfig;
     }
+  }
+
+  // هذا هو getConfig العام — يرجع الكاش المحلي للقراءة السريعة
+  function getConfig() {
+    return getLocalConfig();
   }
 
   function saveConfig(cfg) {
@@ -36,7 +42,6 @@ const AccessControl = (() => {
   function getClientIdentifiers() {
     const list = [];
 
-    // 1. اسم المستخدم الحساب المسجل إن وجد
     try {
       const session = JSON.parse(localStorage.getItem('eyeclinic_session'));
       if (session && session.username) {
@@ -44,7 +49,6 @@ const AccessControl = (() => {
       }
     } catch (_) {}
 
-    // 2. معرف الجهاز المحلي الثابت
     let deviceId = localStorage.getItem('eyeclinic_device_id');
     if (!deviceId) {
       deviceId = 'dev_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
@@ -52,7 +56,6 @@ const AccessControl = (() => {
     }
     list.push(deviceId.toLowerCase());
 
-    // 3. عنوان الـ IP الخاص بالعميل إن وجد
     const lastIp = localStorage.getItem('eyeclinic_last_ip');
     if (lastIp) {
       list.push(lastIp.toLowerCase());
@@ -61,12 +64,8 @@ const AccessControl = (() => {
     return list;
   }
 
-  function isBlocked() {
-    if (/trace\.html/i.test(location.pathname)) return false;
-
-    const cfg = getConfig();
+  function isBlockedByConfig(cfg) {
     if (!cfg || cfg.enabled === false) return false;
-
     const identifiers = getClientIdentifiers().map(i => String(i).toLowerCase().trim());
     if (identifiers.length === 0) return false;
 
@@ -77,15 +76,18 @@ const AccessControl = (() => {
       const wList = (cfg.whitelist || []).map(w => String(w).toLowerCase().trim());
       return !identifiers.some(id => wList.includes(id));
     }
-
     return false;
+  }
+
+  function isBlocked() {
+    if (/trace\.html/i.test(location.pathname)) return false;
+    return isBlockedByConfig(getLocalConfig());
   }
 
   function renderBlockScreen() {
     if (document.getElementById('accessBlockOverlay')) return;
-    const cfg = getConfig();
-    
-    // إنشاء الحاوية الخاصة بشاشة المنع
+    const cfg = getLocalConfig();
+
     const overlay = document.createElement('div');
     overlay.id = 'accessBlockOverlay';
     overlay.style.cssText = `
@@ -116,7 +118,6 @@ const AccessControl = (() => {
           عذراً، هذا الجهاز / الحساب غير مفعّل لاستخدام نظام تقارير العيادة.
         </p>
 
-        <!-- صندوق الاشتراك -->
         <div style="
           background: rgba(30, 143, 213, 0.15);
           border: 1px dashed rgba(99, 196, 238, 0.4);
@@ -131,7 +132,6 @@ const AccessControl = (() => {
               ${cfg.priceText || '100 ج.م شهرياً عبر انستا باي (InstaPay)'}
             </span>
           </div>
-
           <div style="font-size:14px; color:#fff; margin-bottom:8px;">
             📲 <strong>الدفع عبر انستا باي (InstaPay):</strong>
           </div>
@@ -191,7 +191,6 @@ const AccessControl = (() => {
     }
   }
 
-
   function removeBlockScreen() {
     var overlay = document.getElementById('accessBlockOverlay');
     if (overlay) {
@@ -200,72 +199,91 @@ const AccessControl = (() => {
     }
   }
 
-  function fetchAndSync(onDone) {
+  // ================================================================
+  // fetchFromServer: يجلب الـ config من Apps Script عبر POST
+  //   ✅ POST لا يتعمله cache أبداً على عكس GET
+  //   ✅ السيرفر هو المصدر الوحيد للحقيقة
+  //   ✅ localStorage فقط fallback لو الشبكة وقعت
+  // ================================================================
+  function fetchFromServer(onDone) {
     var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
     var scriptUrl = (typeof VISITOR_SCRIPT_URL !== 'undefined' && VISITOR_SCRIPT_URL &&
                      VISITOR_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE')
                   ? VISITOR_SCRIPT_URL
                   : (localStorage.getItem('eyeclinic_script_url') || DEFAULT_URL);
 
-    if (!scriptUrl) return;
+    if (!scriptUrl) { if (onDone) onDone(null); return; }
 
-    fetch(scriptUrl + '?action=getConfig&t=' + Date.now())
+    // ── POST بدل GET ← بيتجاوز الـ CDN cache تماماً ──
+    fetch(scriptUrl + '?action=getConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'getConfig', t: Date.now() })
+    })
       .then(function(r) { return r.text(); })
       .then(function(text) {
         try {
           var serverCfg = JSON.parse(text);
           if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
+            // حفظ في localStorage كـ fallback فقط
             saveConfig(serverCfg);
+            if (onDone) onDone(serverCfg);
+            return;
           }
         } catch (_) {}
-        if (onDone) onDone();
+        // لو الـ parse فشل — استخدم الكاش المحلي
+        if (onDone) onDone(null);
       })
       .catch(function () {
-        if (onDone) onDone();
+        // الشبكة وقعت — fallback للكاش المحلي
+        if (onDone) onDone(null);
       });
+  }
+
+  function applyServerDecision(serverCfg) {
+    // لو السيرفر رد بـ config صالح → استخدمه مباشرة
+    // لو السيرفر فشل (null) → استخدم الكاش المحلي كـ fallback
+    var cfg = serverCfg || getLocalConfig();
+    var blocked = isBlockedByConfig(cfg);
+
+    if (blocked) {
+      renderBlockScreen();
+    } else {
+      removeBlockScreen();
+    }
   }
 
   function checkAndEnforce() {
     if (/trace\.html/i.test(location.pathname)) return;
 
     // ======================================================
-    // ① فحص فوري من localStorage (بدون أي انتظار للشبكة)
-    //    إذا كان محظوراً في الكاش → اعرض الحجب فوراً
+    // ① فحص سريع من localStorage للاستجابة الفورية
+    //    مجرد "hint" مبدئي — السيرفر هو الفيصل الحقيقي
     // ======================================================
     if (isBlocked()) {
       renderBlockScreen();
     }
 
     // ======================================================
-    // ② دائماً اجلب السيرفر في الخلفية بغض النظر عن الحالة المحلية
-    //    حتى لو كان محظوراً محلياً — ربما رُفع الحظر من السيرفر
+    // ② اجلب الـ config من السيرفر عبر POST (بدون cache)
+    //    قرار السيرفر هو النهائي ويطغى على الكاش المحلي
     // ======================================================
-    fetchAndSync(function() {
-      if (isBlocked()) {
-        // لا يزال محظوراً بعد تحديث السيرفر
-        renderBlockScreen();
-      } else {
-        // رُفع الحظر من السيرفر → أزل شاشة الحجب فوراً
-        removeBlockScreen();
-      }
+    fetchFromServer(function(serverCfg) {
+      applyServerDecision(serverCfg);
     });
   }
 
   // ======================================================
-  // ③ فحص دوري سريع كل 15 ثانية
-  //    يضمن استجابة سريعة لأي تغيير حظر/رفع حظر
+  // ③ فحص دوري كل 10 ثوانٍ من السيرفر مباشرة
+  //    يضمن استجابة شبه فورية لأي تغيير حظر/رفع حظر
   // ======================================================
   (function startPeriodicCheck() {
     if (/trace\.html/i.test(location.pathname)) return;
     setInterval(function() {
-      fetchAndSync(function() {
-        if (isBlocked()) {
-          renderBlockScreen();
-        } else {
-          removeBlockScreen();
-        }
+      fetchFromServer(function(serverCfg) {
+        applyServerDecision(serverCfg);
       });
-    }, 15000); // كل 15 ثانية
+    }, 10000); // كل 10 ثوانٍ
   })();
 
   // تشغيل الفحص تلقائياً
@@ -280,3 +298,4 @@ const AccessControl = (() => {
     removeBlockScreen
   };
 })();
+
