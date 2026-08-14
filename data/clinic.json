@@ -5,5 +5,5 @@
   "printHeader": true,
   "printFooter": true,
   "printWatermark": true,
-  "printOffsetTop": 0
+  "printOffsetTop": 50
 }
