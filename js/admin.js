@@ -826,6 +826,26 @@ $(async function () {
     showToast("✔ جاري تحميل ملفات JSON (ضعها في مجلد data المرفوع على جيت هب)");
   });
 
+  $("#btnExportTemplatesJson").on("click", function () {
+    DB.downloadJsonFile("templates.json", DB.Templates.all());
+    showToast("✔ تم تصدير templates.json بنجاح (ضعه في مجلد data المرفوع على جيت هب)");
+  });
+
+  $("#btnExportUsersJson").on("click", function () {
+    DB.downloadJsonFile("users.json", DB.Users.all());
+    showToast("✔ تم تصدير users.json بنجاح (ضعه في مجلد data المرفوع على جيت هب)");
+  });
+
+  $("#btnExportDoctorsJson").on("click", function () {
+    DB.downloadJsonFile("doctors.json", DB.Doctors.all());
+    showToast("✔ تم تصدير doctors.json بنجاح (ضعه في مجلد data المرفوع على جيت هب)");
+  });
+
+  $("#btnExportClinicJson").on("click", function () {
+    DB.downloadJsonFile("clinic.json", DB.Clinic.get());
+    showToast("✔ تم تصدير clinic.json بنجاح (ضعه في مجلد data المرفوع على جيت هب)");
+  });
+
   renderDoctors();
   loadClinicSettings();
 });

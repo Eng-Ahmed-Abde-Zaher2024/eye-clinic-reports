@@ -40,6 +40,7 @@ const DB = (() => {
     const needDoctors = !localStorage.getItem(KEYS.doctors);
     const needTemplates = !localStorage.getItem(KEYS.templates);
     const needClinic = !localStorage.getItem(KEYS.clinic);
+    const isUsersDirty = localStorage.getItem("eyeclinic_users_dirty") === "true";
 
     try {
       const fetchJson = (url) => fetch(url + "?t=" + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -48,13 +49,13 @@ const DB = (() => {
         needDoctors ? fetchJson("data/doctors.json") : null,
         needTemplates ? fetchJson("data/templates.json") : null,
         needClinic ? fetchJson("data/clinic.json") : null,
-        fetchJson("data/users.json") // دائما يجلب users.json لضمان تطبيق أي تعديل في الملف
+        !isUsersDirty ? fetchJson("data/users.json") : null // عدم سحق التعديلات المحلية غير المصدرة
       ]);
 
       if (needDoctors && doctors && Array.isArray(doctors) && doctors.length > 0) write(KEYS.doctors, doctors);
       if (needTemplates && templates && Array.isArray(templates) && templates.length > 0) write(KEYS.templates, templates);
       if (needClinic && clinic && typeof clinic === "object") write(KEYS.clinic, clinic);
-      if (users && Array.isArray(users) && users.length > 0) {
+      if (!isUsersDirty && users && Array.isArray(users) && users.length > 0) {
         write(KEYS.users, users);
         // فحص الجلسة فوراً بعد تحديث المستخدمين من السيرفر/جيت هب
         if (Session.current() && !Session.isValid()) {
@@ -482,15 +483,18 @@ const DB = (() => {
       user.id = uid("u");
       users.push(user);
       write(KEYS.users, users);
+      localStorage.setItem("eyeclinic_users_dirty", "true");
       return user;
     },
     update(id, changes) {
       const users = this.all().map((u) => (u.id === id ? { ...u, ...changes } : u));
       write(KEYS.users, users);
+      localStorage.setItem("eyeclinic_users_dirty", "true");
     },
     remove(id) {
       const users = this.all().filter((u) => u.id !== id);
       write(KEYS.users, users);
+      localStorage.setItem("eyeclinic_users_dirty", "true");
     }
   };
 
@@ -581,6 +585,10 @@ const DB = (() => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    if (filename === "users.json") {
+      localStorage.removeItem("eyeclinic_users_dirty");
+    }
   }
 
   function exportAllJsonFiles() {
@@ -593,6 +601,7 @@ const DB = (() => {
   // ---------------------- فحص المباشر للتغييرات من جيت هب بدون ريفرش ----------------------
   async function checkRemoteUsers() {
     if (window.location.protocol === "file:") return false;
+    if (localStorage.getItem("eyeclinic_users_dirty") === "true") return false; // عدم سحق التعديلات المحلية الحية
     try {
       const r = await fetch("data/users.json?t=" + Date.now());
       if (!r.ok) return false;
