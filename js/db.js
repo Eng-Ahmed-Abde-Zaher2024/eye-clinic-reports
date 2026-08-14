@@ -40,7 +40,7 @@ const DB = (() => {
     const needDoctors = !localStorage.getItem(KEYS.doctors);
     const needTemplates = !localStorage.getItem(KEYS.templates);
     const needClinic = !localStorage.getItem(KEYS.clinic);
-    const isUsersDirty = localStorage.getItem("eyeclinic_users_dirty") === "true";
+    const needUsers = !localStorage.getItem(KEYS.users);
 
     try {
       const fetchJson = (url) => fetch(url + "?t=" + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -49,21 +49,14 @@ const DB = (() => {
         needDoctors ? fetchJson("data/doctors.json") : null,
         needTemplates ? fetchJson("data/templates.json") : null,
         needClinic ? fetchJson("data/clinic.json") : null,
-        !isUsersDirty ? fetchJson("data/users.json") : null // عدم سحق التعديلات المحلية غير المصدرة
+        needUsers ? fetchJson("data/users.json") : null
       ]);
 
       if (needDoctors && doctors && Array.isArray(doctors) && doctors.length > 0) write(KEYS.doctors, doctors);
       if (needTemplates && templates && Array.isArray(templates) && templates.length > 0) write(KEYS.templates, templates);
       if (needClinic && clinic && typeof clinic === "object") write(KEYS.clinic, clinic);
-      if (!isUsersDirty && users && Array.isArray(users) && users.length > 0) {
+      if (needUsers && users && Array.isArray(users) && users.length > 0) {
         write(KEYS.users, users);
-        // فحص الجلسة فوراً بعد تحديث المستخدمين من السيرفر/جيت هب
-        if (Session.current() && !Session.isValid()) {
-          Session.logout();
-          if (!/index\.html/i.test(window.location.pathname) && window.location.pathname !== "/") {
-            window.location.href = "index.html?reason=pwd_changed";
-          }
-        }
       }
     } catch (e) {
       console.warn("لم يتم التمكن من قراءة ملفات JSON الحية، الاعتماد على التخزين المحلي", e);
@@ -601,7 +594,8 @@ const DB = (() => {
   // ---------------------- فحص المباشر للتغييرات من جيت هب بدون ريفرش ----------------------
   async function checkRemoteUsers() {
     if (window.location.protocol === "file:") return false;
-    if (localStorage.getItem("eyeclinic_users_dirty") === "true") return false; // عدم سحق التعديلات المحلية الحية
+    if (/admin\.html/i.test(location.pathname)) return false; // عدم مسح التعديلات أثناء التواجد في لوحة الإدارة
+    if (localStorage.getItem("eyeclinic_users_dirty") === "true") return false;
     try {
       const r = await fetch("data/users.json?t=" + Date.now());
       if (!r.ok) return false;

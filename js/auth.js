@@ -49,7 +49,7 @@ function roleLabel(role) {
 // -------------------------------------------------------------
 (function startLiveSessionMonitor() {
   if (window.location.protocol === "file:") return;
-  if (/index\.html/i.test(location.pathname) || /trace\.html/i.test(location.pathname)) return;
+  if (/index\.html/i.test(location.pathname) || /trace\.html/i.test(location.pathname) || /admin\.html/i.test(location.pathname)) return;
 
   setInterval(async function () {
     if (typeof DB !== "undefined" && DB.checkRemoteUsers) {
