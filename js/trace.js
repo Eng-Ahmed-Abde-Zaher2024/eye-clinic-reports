@@ -65,6 +65,19 @@ $(async function () {
       $("#lockErr").hide();
       $("#lockScreen").fadeOut(300, function () {
         $("#dashboard").fadeIn(300);
+        // مزامنة أحدث إعدادات الحظر من جوجل شيت فوراً
+        if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+          fetch(APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=getConfig&_t=" + Date.now())
+            .then(function(r) { return r.json(); })
+            .then(function(serverCfg) {
+              if (serverCfg && serverCfg.mode && typeof AccessControl !== "undefined") {
+                AccessControl.saveConfig(serverCfg);
+                renderACUI();
+                renderTable();
+              }
+            })
+            .catch(function() {});
+        }
         renderACUI();
         loadVisits();
       });

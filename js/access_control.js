@@ -200,10 +200,9 @@ const AccessControl = (() => {
   }
 
   // ================================================================
-  // fetchFromServer: يجلب الـ config من Apps Script عبر POST
-  //   ✅ POST لا يتعمله cache أبداً على عكس GET
-  //   ✅ السيرفر هو المصدر الوحيد للحقيقة
-  //   ✅ localStorage فقط fallback لو الشبكة وقعت
+  // fetchFromServer: يجلب الـ config الحقيقي والمحدث من Google Sheets مباشرة
+  //   ✅ السيرفر هو المصدر الوحيد والنهائي للحقيقة
+  //   ✅ مسح الكاش من المتصفح لا يلغي الحظر أبداً لأن السيرفر يعيد فرضه فوراً
   // ================================================================
   function fetchFromServer(onDone) {
     var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxWYh4bXsx6CQUB1O4WpS9aj9gaKieDxgGYtv6kLQ3JlBi0Jrg9XOQw_5lupUqV8slpWA/exec';
@@ -214,28 +213,22 @@ const AccessControl = (() => {
 
     if (!scriptUrl) { if (onDone) onDone(null); return; }
 
-    // ── POST بدل GET ← بيتجاوز الـ CDN cache تماماً ──
-    fetch(scriptUrl + '?action=getConfig', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'getConfig', t: Date.now() })
+    var noCacheUrl = scriptUrl + (scriptUrl.indexOf('?') > -1 ? '&' : '?') + 'action=getConfig&_nocache=' + Date.now() + '_' + Math.random().toString(36).slice(2);
+
+    fetch(noCacheUrl, {
+      method: 'GET',
+      cache: 'no-store'
     })
-      .then(function(r) { return r.text(); })
-      .then(function(text) {
-        try {
-          var serverCfg = JSON.parse(text);
-          if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
-            // حفظ في localStorage كـ fallback فقط
-            saveConfig(serverCfg);
-            if (onDone) onDone(serverCfg);
-            return;
-          }
-        } catch (_) {}
-        // لو الـ parse فشل — استخدم الكاش المحلي
+      .then(function(r) { return r.json(); })
+      .then(function(serverCfg) {
+        if (serverCfg && typeof serverCfg === 'object' && serverCfg.mode) {
+          saveConfig(serverCfg);
+          if (onDone) onDone(serverCfg);
+          return;
+        }
         if (onDone) onDone(null);
       })
       .catch(function () {
-        // الشبكة وقعت — fallback للكاش المحلي
         if (onDone) onDone(null);
       });
   }
