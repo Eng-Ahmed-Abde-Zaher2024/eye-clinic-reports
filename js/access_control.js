@@ -12,18 +12,26 @@ const AccessControl = (() => {
   //    مدمجة في الكود مباشرة — لا يمكن تعديلها من localStorage أو السيرفر
   // ══════════════════════════════════════════════════════════════
   const ALWAYS_ALLOWED_DEVICES = [
-    'dev_9pgwtjhmss'   // 🖥️ جهاز المطور الشخصي — مسموح دائماً
+    'dev_utlpe1amst3ko8t', // 🖥️ جهازك الشخصي الحالي — مسموح دائماً
+    'dev_9pgwtjhmss'       // 🖥️ جهاز المطور — مسموح دائماً
   ];
 
   /**
    * يتحقق إذا كان الجهاز الحالي من الأجهزة المسموح لها دائماً
    * يقارن بداية الـ device ID مع القائمة (prefix match)
+   * أو إذا كان المستخدم مسجلاً بحساب مدير النظام (admin)
    */
   function isAlwaysAllowed() {
     try {
       const deviceId = (localStorage.getItem('eyeclinic_device_id') || '').toLowerCase().trim();
-      if (!deviceId) return false;
-      return ALWAYS_ALLOWED_DEVICES.some(prefix => deviceId.startsWith(prefix.toLowerCase()));
+      if (deviceId && ALWAYS_ALLOWED_DEVICES.some(prefix => deviceId.startsWith(prefix.toLowerCase()))) {
+        return true;
+      }
+      const session = JSON.parse(localStorage.getItem('eyeclinic_session') || '{}');
+      if (session && (session.role === 'admin' || session.username === 'admin' || session.username === 'AA244275')) {
+        return true;
+      }
+      return false;
     } catch (_) {
       return false;
     }

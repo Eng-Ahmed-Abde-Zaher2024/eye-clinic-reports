@@ -199,6 +199,29 @@
 
     <!-- ============ SETTINGS TAB ============ -->
     <div class="tab-panel" id="tab-settings">
+
+      <!-- بطاقة حالة المزامنة مع GitHub -->
+      <div class="cloud-sync-card">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h4>
+              <span class="sync-status-dot"></span>
+              حالة المزامنة مع GitHub وتحديثات السيرفر
+            </h4>
+            <p style="font-size:13px; color:var(--text-dim); margin:0; line-height:1.6;">
+              تاريخ ووقت آخر فحص ومزامنة ناجحة لملفات البيانات:
+              <strong id="syncDetailedTime" style="color:var(--navy); margin-right:4px;">جاري الفحص...</strong>
+            </p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm btn-sync-data" id="btnForceSyncAdmin" style="padding:9px 16px;">
+            <svg class="sync-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span class="sync-text">فحص ومزامنة البيانات الآن</span>
+          </button>
+        </div>
+      </div>
+
       <div class="grid-2">
 
         <!-- يمين: قائمة الأطباء + إضافة -->
@@ -504,6 +527,18 @@
         </div>
       </div>
     </footer>
+
+    <!-- Floating Sync Widget (عنصر عائم سفلي أنيق لا يزاحم النافبار ولا يظهر عند الطباعة) -->
+    <div class="floating-sync-widget no-print-hidden-on-print" id="floatingSyncWidget">
+      <button class="floating-sync-btn btn-sync-data" id="btnSyncData" title="فحص ومزامنة البيانات من السيرفر فوراً">
+        <svg class="sync-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span class="sync-status-dot"></span>
+        <span class="sync-text">مزامنة البيانات</span>
+        <span class="sync-badge-time" id="syncBadgeTime">...</span>
+      </button>
+    </div>
 
     <div class="toast" id="toast"></div>
 

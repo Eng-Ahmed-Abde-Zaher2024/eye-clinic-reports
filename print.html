@@ -183,6 +183,18 @@
       </div>
     </footer>
 
+    <!-- Floating Sync Widget (عنصر عائم سفلي أنيق لا يزاحم النافبار ولا يظهر عند الطباعة) -->
+    <div class="floating-sync-widget no-print-hidden-on-print" id="floatingSyncWidget">
+      <button class="floating-sync-btn btn-sync-data" id="btnSyncData" title="فحص ومزامنة البيانات من السيرفر فوراً">
+        <svg class="sync-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span class="sync-status-dot"></span>
+        <span class="sync-text">مزامنة البيانات</span>
+        <span class="sync-badge-time" id="syncBadgeTime">...</span>
+      </button>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script src="js/vendor/jquery.min.js"></script>

@@ -70,12 +70,78 @@
 
     var drawerAvatar = document.getElementById("drawerUserAvatar");
     if (drawerAvatar) drawerAvatar.textContent = initial;
+
+    updateSyncBadge();
   }
+
+  /* ─── Sync Status & Last Update Time Helper ─── */
+  function updateSyncBadge() {
+    if (typeof DB === "undefined" || !DB.getLastSyncTime) return;
+    var lastSync = DB.getLastSyncTime();
+    var badges = document.querySelectorAll(".sync-badge-time, #syncBadgeTime");
+    var timeStr = DB.formatSyncTime(lastSync);
+    badges.forEach(function (el) {
+      el.textContent = lastSync ? timeStr : "الآن";
+    });
+
+    var detailEl = document.getElementById("syncDetailedTime");
+    if (detailEl && DB.formatSyncDate) {
+      detailEl.textContent = DB.formatSyncDate(lastSync);
+    }
+  }
+
+  // Handle Sync Button Click
+  document.addEventListener("click", async function (e) {
+    var btn = e.target.closest(".btn-sync-data, #btnSyncData, #btnForceSyncAdmin");
+    if (!btn) return;
+    e.preventDefault();
+
+    if (typeof DB === "undefined" || !DB.syncNow) return;
+
+    btn.classList.add("syncing");
+    var syncText = btn.querySelector(".sync-text");
+    var oldText = syncText ? syncText.textContent : "";
+    if (syncText) syncText.textContent = "جاري الفحص...";
+
+    try {
+      await DB.syncNow();
+      updateSyncBadge();
+
+      // Trigger re-render if in admin or print page
+      if (typeof renderTemplates === "function") renderTemplates();
+      if (typeof renderDoctors === "function") renderDoctors();
+      if (typeof renderUsers === "function") renderUsers();
+      if (typeof loadClinicSettings === "function") loadClinicSettings();
+      if (typeof loadTemplates === "function") loadTemplates();
+      if (typeof loadDoctors === "function") loadDoctors();
+
+      var toast = document.getElementById("toast");
+      if (toast) {
+        toast.textContent = "✅ تم فحص ومزامنة البيانات بنجاح (" + DB.formatSyncTime(DB.getLastSyncTime()) + ")";
+        toast.classList.remove("err");
+        toast.classList.add("show");
+        setTimeout(function () { toast.classList.remove("show"); }, 3200);
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+    } finally {
+      setTimeout(function () {
+        btn.classList.remove("syncing");
+        if (syncText) syncText.textContent = oldText;
+      }, 500);
+    }
+  });
 
   // Try immediately, and also after DOM is fully loaded (for late-bound DB)
   fillUserInfo();
-  window.addEventListener("load", fillUserInfo);
+  window.addEventListener("load", function () {
+    fillUserInfo();
+    updateSyncBadge();
+  });
   document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(fillUserInfo, 100);
+    setTimeout(function () {
+      fillUserInfo();
+      updateSyncBadge();
+    }, 100);
   });
 })();

@@ -214,10 +214,11 @@ $(async function () {
   }
 
   function addFieldRow(field, autoFocus) {
-    const key     = field ? (field.key     || "") : "";
-    const label   = field ? (field.label   || "") : "";
-    const type    = field ? (field.type    || "text") : "text";
-    const options = field ? (field.options || "") : "";
+    const key          = field ? (field.key          || "") : "";
+    const label        = field ? (field.label        || "") : "";
+    const type         = field ? (field.type         || "text") : "text";
+    const options      = field ? (field.options      || "") : "";
+    const defaultValue = field ? (field.defaultValue !== undefined ? field.defaultValue : (field.default !== undefined ? field.default : "")) : "";
 
     const typeOptions = [
       { val: "text",     lbl: "نص قصير" },
@@ -238,6 +239,7 @@ $(async function () {
         <input type="text" class="fld-label" placeholder="اسم الحقل (للموظف)" value="${escapeHtml(label)}" />
         <select class="fld-type" title="نوع الحقل">${typeSelectHtml}</select>
         <input type="text" class="fld-options" placeholder="خيارات مفصولة بفاصلة (مثال: اليمنى,اليسرى)" value="${escapeHtml(options)}" style="${optionsDisplay}" />
+        <input type="text" class="fld-default" placeholder="القيمة الافتراضية / النص التلقائي" value="${escapeHtml(defaultValue)}" title="القيمة الافتراضية للتوليد التلقائي" />
         <button type="button" class="btn btn-outline btn-sm btn-insert-field" title="إدراج الحقل في نص القالب">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-left:3px"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path></svg>
           إدراج
@@ -379,11 +381,18 @@ $(async function () {
     e.preventDefault();
     const fields = [];
     $("#tpl_fields .dyn-field-row").each(function () {
-      const key     = $(this).find(".fld-key").val().trim();
-      const label   = $(this).find(".fld-label").val().trim();
-      const type    = $(this).find(".fld-type").val() || "text";
-      const options = $(this).find(".fld-options").val().trim();
-      if (key && label) fields.push({ key, label, type, options });
+      const key          = $(this).find(".fld-key").val().trim();
+      const label        = $(this).find(".fld-label").val().trim();
+      const type         = $(this).find(".fld-type").val() || "text";
+      const options      = $(this).find(".fld-options").val().trim();
+      const defaultValue = $(this).find(".fld-default").val();
+      if (key && label) {
+        const item = { key, label, type, options };
+        if (defaultValue !== undefined && defaultValue !== "") {
+          item.defaultValue = defaultValue;
+        }
+        fields.push(item);
+      }
     });
 
     if (fields.length === 0) {
@@ -421,8 +430,8 @@ $(async function () {
 
   /* ---------------- Excel export/import ---------------- */
   function serializeFields(fields) {
-    // صيغة: key|label|type|options
-    return (fields || []).map((f) => `${f.key}|${f.label}|${f.type || "text"}|${f.options || ""}`).join(";");
+    // صيغة: key|label|type|options|defaultValue
+    return (fields || []).map((f) => `${f.key}|${f.label}|${f.type || "text"}|${f.options || ""}|${f.defaultValue || f.default || ""}`).join(";");
   }
   function deserializeFields(str) {
     if (!str) return [];
@@ -431,10 +440,11 @@ $(async function () {
       .map((chunk) => chunk.split("|"))
       .filter((p) => p.length >= 2)
       .map((p) => ({
-        key:     (p[0] || "").trim(),
-        label:   (p[1] || "").trim(),
-        type:    (p[2] || "text").trim() || "text",
-        options: (p[3] || "").trim()
+        key:          (p[0] || "").trim(),
+        label:        (p[1] || "").trim(),
+        type:         (p[2] || "text").trim() || "text",
+        options:      (p[3] || "").trim(),
+        defaultValue: (p[4] || "").trim()
       }))
       .filter((f) => f.key && f.label);
   }

@@ -597,6 +597,149 @@ a {
   border: 1px solid rgba(255,255,255,0.12);
 }
 
+/* ── زر ومؤشر المزامنة العائم (Floating Sync Widget) ── */
+.floating-sync-widget {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  z-index: 990;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.floating-sync-btn {
+  background: rgba(11, 23, 64, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #f8fafc !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 30px !important;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.floating-sync-btn:hover {
+  background: rgba(15, 30, 84, 0.98) !important;
+  border-color: rgba(99, 196, 238, 0.7) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 12px 28px -4px rgba(30, 143, 213, 0.5) !important;
+}
+
+[data-theme="pink"] .floating-sync-btn {
+  background: rgba(76, 5, 25, 0.9) !important;
+  border-color: rgba(244, 114, 182, 0.4) !important;
+  box-shadow: 0 8px 24px -4px rgba(190, 24, 93, 0.4) !important;
+}
+
+[data-theme="pink"] .floating-sync-btn:hover {
+  background: rgba(131, 24, 67, 0.98) !important;
+  border-color: rgba(244, 114, 182, 0.8) !important;
+  box-shadow: 0 12px 28px -4px rgba(190, 24, 93, 0.6) !important;
+}
+
+.sync-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  display: inline-block;
+  animation: syncPulse 2s infinite ease-in-out;
+}
+
+@keyframes syncPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.sync-badge-time {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.btn-sync-data.syncing .sync-icon {
+  animation: syncSpin 0.75s linear infinite;
+}
+
+@keyframes syncSpin {
+  100% { transform: rotate(360deg); }
+}
+
+@media print {
+  .floating-sync-widget {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .floating-sync-widget {
+    bottom: 14px;
+    left: 14px;
+  }
+  .floating-sync-btn {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+/* بطاقة تفاصيل المزامنة في لوحة الإدارة */
+.cloud-sync-card {
+  background: linear-gradient(135deg, rgba(30, 143, 213, 0.05) 0%, rgba(52, 183, 160, 0.08) 100%);
+  border: 1.5px solid rgba(30, 143, 213, 0.2);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.cloud-sync-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--navy-deep);
+  margin: 0 0 8px;
+}
+
+.cloud-sync-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cloud-sync-meta-item {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cloud-sync-meta-item small {
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.cloud-sync-meta-item strong {
+  color: var(--navy);
+  font-size: 13.5px;
+}
+
 /* ── Hamburger Button (mobile only) ── */
 .nav-hamburger {
   display: none;
@@ -1218,20 +1361,18 @@ a {
   text-align: center;
   font-family: "Cairo", sans-serif;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--navy);
-  background: #eef4fb;
-  border-radius: 8px;
-  padding: 9px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .a4-body {
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 2.15;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+  color: #334155;
 }
 
 .a4-body p {
@@ -1239,10 +1380,22 @@ a {
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+  color: #334155;
 }
 
 .a4-body strong {
   color: var(--navy);
+  font-weight: 700;
+}
+
+.tpl-val {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.tpl-placeholder {
+  color: #e11d48;
+  font-weight: 700;
 }
 
 .a4-footer {

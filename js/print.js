@@ -107,23 +107,36 @@ $(async function () {
 
     (currentTemplate.fields || []).forEach((f) => {
       const fieldType = (f.type || "text").toLowerCase();
+      let defVal = f.defaultValue !== undefined ? f.defaultValue : (f.default !== undefined ? f.default : "");
+
+      // إذا كانت القيمة الافتراضية مفقودة من القالب المحفوظ محلياً، جلب القيمة الأصلية الحية
+      if (!defVal && currentTemplate && currentTemplate.id && DB.DEFAULT_TEMPLATES) {
+        const dTpl = DB.DEFAULT_TEMPLATES.find(t => t.id === currentTemplate.id);
+        if (dTpl) {
+          const dField = (dTpl.fields || []).find(df => df.key === f.key);
+          if (dField && (dField.defaultValue !== undefined || dField.default !== undefined)) {
+            defVal = dField.defaultValue !== undefined ? dField.defaultValue : dField.default;
+          }
+        }
+      }
 
       let inputHtml = "";
 
       if (fieldType === "date") {
         const todayISO = new Date().toISOString().slice(0, 10);
-        inputHtml = `<input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${todayISO}" required />`;
+        const val = defVal || todayISO;
+        inputHtml = `<input type="date" class="dyn-input date-input" data-key="${escapeHtml(f.key)}" value="${escapeHtml(String(val))}" required />`;
 
       } else if (fieldType === "textarea") {
-        inputHtml = `<textarea class="dyn-input" data-key="${escapeHtml(f.key)}" rows="3" placeholder="مطلوب..." required></textarea>`;
+        inputHtml = `<textarea class="dyn-input" data-key="${escapeHtml(f.key)}" rows="3" placeholder="مطلوب..." required>${escapeHtml(String(defVal))}</textarea>`;
 
       } else if (fieldType === "number") {
-        inputHtml = `<input type="number" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />`;
+        inputHtml = `<input type="number" class="dyn-input" data-key="${escapeHtml(f.key)}" value="${escapeHtml(String(defVal))}" required placeholder="مطلوب..." />`;
 
       } else if (fieldType === "select") {
         const rawOpts = (f.options || "").split(",").map(o => o.trim()).filter(Boolean);
         const optionsHtml = rawOpts.length
-          ? rawOpts.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join("")
+          ? rawOpts.map(o => `<option value="${escapeHtml(o)}" ${String(o) === String(defVal) ? "selected" : ""}>${escapeHtml(o)}</option>`).join("")
           : `<option value="يمنى">يمنى</option><option value="يسرى">يسرى</option><option value="كلتا العينين">كلتا العينين</option>`;
         inputHtml = `<select class="dyn-input" data-key="${escapeHtml(f.key)}" required>
           <option value="">— اختر —</option>
@@ -132,7 +145,7 @@ $(async function () {
 
       } else {
         // text (default / legacy)
-        inputHtml = `<input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="" required placeholder="مطلوب..." />`;
+        inputHtml = `<input type="text" class="dyn-input" data-key="${escapeHtml(f.key)}" value="${escapeHtml(String(defVal))}" required placeholder="مطلوب..." />`;
       }
 
       $form.append(`
@@ -163,11 +176,10 @@ $(async function () {
     $(".dyn-input").each(function () {
       const raw = $(this).val() || "";
       if ($(this).hasClass("date-input") && raw) {
-        // تحويل YYYY-MM-DD إلى تنسيق عربي مقروء
+        // تحويل YYYY-MM-DD إلى تنسيق رقمي YYYY/MM/DD
         const parts = raw.split("-");
         if (parts.length === 3) {
-          const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-          values[$(this).data("key")] = d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+          values[$(this).data("key")] = `${parts[0]}/${parts[1]}/${parts[2]}`;
         } else {
           values[$(this).data("key")] = raw;
         }
@@ -182,10 +194,11 @@ $(async function () {
       const val = values[f.key];
       let safeVal;
       if (val !== undefined && val !== "") {
-        // تحويل الأسطر الجديدة في نصوص textarea إلى <br> لعرضها سليماً في معاينة A4
-        safeVal = escapeHtml(val).replace(/\n/g, "<br>");
+        // تحويل الأسطر الجديدة في نصوص textarea إلى <br> وتمييز المتغير في المعاينة
+        const formatted = escapeHtml(val).replace(/\n/g, "<br>");
+        safeVal = `<span class="tpl-val">${formatted}</span>`;
       } else {
-        safeVal = `<span style="color:#888;">[${escapeHtml(f.label)}]</span>`;
+        safeVal = `<span class="tpl-placeholder">[${escapeHtml(f.label)}]</span>`;
       }
       html = html.replace(re, safeVal);
     });
@@ -196,7 +209,11 @@ $(async function () {
     html = html.replace(/\{\{\s*[\w-]+\s*\}\}/g, "");
 
     $("#reportBody").html(html);
-    $("#footerDate").text("تاريخ الطباعة: " + new Date().toLocaleDateString("ar-EG"));
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    $("#footerDate").text("تاريخ الطباعة: " + yyyy + "/" + mm + "/" + dd);
     const clinicData = DB.Clinic.get();
     $("#footerClinicName").text(clinicData.clinicName || "مركز الخبراء لطب وجراحة العيون والليزك");
   }

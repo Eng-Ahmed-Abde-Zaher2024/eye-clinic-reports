@@ -31,13 +31,64 @@ $(async function () {
     await DB.init();
   }
 
+  var KNOWN_OWNER_IDS = ['dev_utlpe1amst3ko8t', 'dev_9pgwtjhmss'];
+
+  function isOwnerIdentifier(str) {
+    if (!str) return false;
+    var s = String(str).toLowerCase().trim();
+    var currentDev = (localStorage.getItem('eyeclinic_device_id') || '').toLowerCase().trim();
+    if (currentDev && s === currentDev) return true;
+    return KNOWN_OWNER_IDS.some(id => s.startsWith(id.toLowerCase()));
+  }
+
   /* — اعتراض saveConfig لإرسالها للسيرفر عند كل تغيير — */
   if (typeof AccessControl !== 'undefined') {
     var _origSave = AccessControl.saveConfig.bind(AccessControl);
     AccessControl.saveConfig = function (cfg) {
+      // حماية أجهزة المالك من الحظر دائماً
+      if (cfg.blacklist && cfg.blacklist.length > 0) {
+        cfg.blacklist = cfg.blacklist.filter(item => !isOwnerIdentifier(item));
+      }
       _origSave(cfg);
       saveConfigToServer(cfg); // تحديث فوري للسيرفر
     };
+  }
+
+  /* ---------------- Tab Switching ---------------- */
+  function switchTab(tabId) {
+    $(".tab-btn").removeClass("active").attr("aria-selected", "false");
+    $(".tab-panel").removeClass("active");
+
+    var $btn = $(`.tab-btn[data-tab="${tabId}"]`);
+    var $panel = $(`#${tabId}`);
+
+    if ($btn.length && $panel.length) {
+      $btn.addClass("active").attr("aria-selected", "true");
+      $panel.addClass("active");
+      try { sessionStorage.setItem("trace_active_tab", tabId); } catch (_) {}
+    }
+  }
+
+  $(document).on("click", ".tab-btn", function () {
+    var targetTab = $(this).data("tab");
+    if (targetTab) switchTab(targetTab);
+  });
+
+  /* ---------------- Owner Device Info ---------------- */
+  function getOwnerDeviceId() {
+    var devId = localStorage.getItem("eyeclinic_device_id");
+    if (!devId) {
+      devId = "dev_utlpe1amst3ko8t";
+      try { localStorage.setItem("eyeclinic_device_id", devId); } catch (_) {}
+    }
+    return devId;
+  }
+
+  function renderOwnerDevice() {
+    var devId = getOwnerDeviceId();
+    var lastIp = localStorage.getItem("eyeclinic_last_ip") || "";
+    var infoText = `معرّف الجهاز: ${devId}` + (lastIp ? ` | آخر IP مسجّل: ${lastIp}` : "");
+    $("#ownerDeviceId").text(infoText);
   }
 
   /* ---------------- Lock Screen ---------------- */
@@ -65,6 +116,10 @@ $(async function () {
       $("#lockErr").hide();
       $("#lockScreen").fadeOut(300, function () {
         $("#dashboard").fadeIn(300);
+        renderOwnerDevice();
+        var savedTab = sessionStorage.getItem("trace_active_tab") || "tab-visits";
+        switchTab(savedTab);
+
         // مزامنة أحدث إعدادات الحظر من جوجل شيت فوراً
         if (APPS_SCRIPT_GET_URL && APPS_SCRIPT_GET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
           fetch(APPS_SCRIPT_GET_URL + (APPS_SCRIPT_GET_URL.indexOf("?") > -1 ? "&" : "?") + "action=getConfig&_t=" + Date.now())
@@ -235,6 +290,7 @@ $(async function () {
     renderCharts();
     renderRankings();
     renderTable();
+    renderUniqueDevices();
   }
 
   $("#srch").on("input", applyFilters);
@@ -435,6 +491,7 @@ $(async function () {
   }
 
   function renderACUI() {
+    renderOwnerDevice();
     if (typeof AccessControl === "undefined") return;
     var cfg = AccessControl.getConfig();
 
@@ -474,6 +531,7 @@ $(async function () {
         `);
       });
     }
+    renderUniqueDevices();
   }
 
 
@@ -501,6 +559,10 @@ $(async function () {
   $("#btnAddBlack").on("click", function () {
     var val = $("#acNewInput").val().trim();
     if (!val) return;
+    if (isOwnerIdentifier(val)) {
+      alert("⚠️ لا يمكن حظر جهاز المطور / المالك (مسموح له دائماً).");
+      return;
+    }
     var cfg = AccessControl.getConfig();
     if (!cfg.blacklist.includes(val)) {
       cfg.blacklist.push(val);
@@ -545,6 +607,11 @@ $(async function () {
     var target = String($(this).data("target")).trim();
     if (!target) return;
 
+    if (isOwnerIdentifier(target)) {
+      alert("⚠️ هذا جهاز المطور / المالك وهو مسموح له دائماً ولا يمكن حظره.");
+      return;
+    }
+
     var cfg = AccessControl.getConfig();
     var isBlack = cfg.blacklist.includes(target);
 
@@ -568,12 +635,16 @@ $(async function () {
     if (typeof AccessControl === "undefined") return;
     var selected = [];
     $(".visit-chk:checked").each(function () {
-      var t = $(this).data("target");
-      if (t && !selected.includes(t)) selected.push(String(t).trim());
+      var t = String($(this).data("target") || "").trim();
+      if (t && !selected.includes(t)) {
+        if (!isOwnerIdentifier(t)) {
+          selected.push(t);
+        }
+      }
     });
 
     if (selected.length === 0) {
-      alert("يرجى تحديد زيارة واحدة على الأقل من الجدول لاستخدام الإجراء الجماعي.");
+      alert("يرجى تحديد زيارة واحدة على الأقل صالحة للحظر (جهاز المطور محمي دائماً).");
       return;
     }
 
@@ -608,8 +679,241 @@ $(async function () {
     AccessControl.saveConfig(cfg);
     alert("تمت إضافة (" + selected.length + ") عناصر إلى القائمة البيضاء بالسماح.");
     renderACUI();
+    renderUniqueDevices();
     renderTable();
   });
+
+  /* ---------------- Unique Devices Aggregation & Rendering ---------------- */
+  function renderUniqueDevices() {
+    var $tbody = $("#uniqueDevicesTbody");
+    if (!$tbody.length) return;
+    $tbody.empty();
+
+    var cfg = typeof AccessControl !== "undefined" ? AccessControl.getConfig() : null;
+    var sq = ($("#srchDevices").val() || "").trim().toLowerCase();
+    var fltStatus = $("#fltDeviceStatus").val();
+
+    // Group visits by device ID or IP
+    var deviceMap = {};
+
+    allVisits.forEach(function (v) {
+      var devId = (v.deviceId || v.deviceid || "").trim();
+      var rawIp = (v.ip || "").trim();
+      var ip = /^(\d{1,3}\.){3}\d{1,3}$/.test(rawIp) ? rawIp : '';
+      var key = devId || ip || v.username || "unknown";
+
+      if (!deviceMap[key]) {
+        deviceMap[key] = {
+          deviceId: devId,
+          ip: ip,
+          deviceName: v.deviceName || v.devicename || v.device || "جهاز غير معروف",
+          deviceType: v.device || "Desktop",
+          browser: v.browser || "—",
+          lastUser: (v.loggedIn || v.loggedin === "YES") ? (v.fullName || v.username || "") : (v.username || "زائر مجهول"),
+          userRole: v.role || "",
+          lastSeen: v.timestamp || "",
+          visitCount: 0,
+          isLogged: v.loggedIn || v.loggedin === "YES"
+        };
+      }
+
+      deviceMap[key].visitCount++;
+      if (v.timestamp && (!deviceMap[key].lastSeen || v.timestamp > deviceMap[key].lastSeen)) {
+        deviceMap[key].lastSeen = v.timestamp;
+        if (devId) deviceMap[key].deviceId = devId;
+        if (ip) deviceMap[key].ip = ip;
+        if (v.deviceName) deviceMap[key].deviceName = v.deviceName;
+        if (v.device) deviceMap[key].deviceType = v.device;
+        if (v.browser) deviceMap[key].browser = v.browser;
+        if (v.loggedIn || v.loggedin === "YES") {
+          deviceMap[key].lastUser = v.fullName || v.username || deviceMap[key].lastUser;
+          deviceMap[key].userRole = v.role || deviceMap[key].userRole;
+          deviceMap[key].isLogged = true;
+        }
+      }
+    });
+
+    // Ensure owner device is included
+    var ownerId = getOwnerDeviceId();
+    if (ownerId && !deviceMap[ownerId]) {
+      var lastIp = localStorage.getItem("eyeclinic_last_ip") || "";
+      deviceMap[ownerId] = {
+        deviceId: ownerId,
+        ip: lastIp,
+        deviceName: "جهاز المطور / المالك الحالي",
+        deviceType: "Desktop",
+        browser: "Chrome",
+        lastUser: "المدير (أنت)",
+        userRole: "admin",
+        lastSeen: new Date().toISOString(),
+        visitCount: 1,
+        isLogged: true
+      };
+    }
+
+    var devicesList = Object.values(deviceMap);
+
+    // Sort: Owner first, then by lastSeen descending
+    devicesList.sort(function (a, b) {
+      var aOwner = isOwnerIdentifier(a.deviceId) || isOwnerIdentifier(a.ip);
+      var bOwner = isOwnerIdentifier(b.deviceId) || isOwnerIdentifier(b.ip);
+      if (aOwner && !bOwner) return -1;
+      if (!aOwner && bOwner) return 1;
+      return new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0);
+    });
+
+    // Filtering
+    var filteredDevs = devicesList.filter(function (dev) {
+      var isOwner = isOwnerIdentifier(dev.deviceId) || isOwnerIdentifier(dev.ip);
+      var isWhite = cfg && dev.deviceId && cfg.whitelist.includes(dev.deviceId);
+      var isBlack = cfg && dev.deviceId && cfg.blacklist.includes(dev.deviceId);
+
+      if (fltStatus === "owner" && !isOwner) return false;
+      if (fltStatus === "white" && !isWhite) return false;
+      if (fltStatus === "black" && !isBlack) return false;
+      if (fltStatus === "allowed_by_mode" && (isWhite || isBlack || isOwner)) return false;
+
+      if (sq) {
+        var str = [dev.deviceId, dev.ip, dev.deviceName, dev.browser, dev.lastUser].join(" ").toLowerCase();
+        if (str.indexOf(sq) === -1) return false;
+      }
+      return true;
+    });
+
+    $("#uniqueDevCount").text(devicesList.length);
+
+    if (filteredDevs.length === 0) {
+      $tbody.append(`<tr><td colspan="9" class="empty-td">لا توجد أجهزة مطابقة للبحث</td></tr>`);
+      return;
+    }
+
+    filteredDevs.forEach(function (dev, idx) {
+      var isOwner = isOwnerIdentifier(dev.deviceId) || isOwnerIdentifier(dev.ip);
+      var isWhite = cfg && dev.deviceId && cfg.whitelist.includes(dev.deviceId);
+      var isBlack = cfg && dev.deviceId && cfg.blacklist.includes(dev.deviceId);
+
+      // Status badge
+      var statusHtml = "";
+      if (isOwner) {
+        statusHtml = `<span class="badge" style="background:#0f3460; color:#63c4ee; font-weight:800; border:1px solid rgba(99,196,238,0.4);">👑 جهاز المالك (مسموح دائماً)</span>`;
+      } else if (isWhite) {
+        statusHtml = `<span class="badge b-in" style="font-weight:700;">✅ مسموح حصراً (Whitelist)</span>`;
+      } else if (isBlack) {
+        statusHtml = `<span class="badge" style="background:rgba(232,57,79,0.15); color:var(--coral); font-weight:700;">⛔ محظور (Blacklist)</span>`;
+      } else {
+        if (cfg && cfg.mode === "whitelist") {
+          statusHtml = `<span class="badge" style="background:rgba(107,116,136,0.15); color:var(--dim);">🚫 غير مصرح (Whitelist)</span>`;
+        } else {
+          statusHtml = `<span class="badge" style="background:rgba(52,183,160,0.12); color:#1a8f78;">🟢 مسموح تلقائياً (Blacklist)</span>`;
+        }
+      }
+
+      // Time format
+      var timeFormatted = "—";
+      if (dev.lastSeen) {
+        try {
+          var d = new Date(dev.lastSeen);
+          timeFormatted = d.toLocaleDateString("ar-EG") + " " + d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+        } catch (_) {
+          timeFormatted = dev.lastSeen;
+        }
+      }
+
+      // Action buttons
+      var actionsHtml = "";
+      if (isOwner) {
+        actionsHtml = `<span style="color:var(--teal); font-size:12px; font-weight:700;">👑 مسموح ومحمي تلقائياً</span>`;
+      } else {
+        var targetId = dev.deviceId || dev.ip;
+        var whiteBtn = isWhite
+          ? `<button class="tbtn btn-toggle-dev-white" data-target="${escapeHtml(targetId)}" style="font-size:11px; padding:3px 8px; background:rgba(107,116,136,0.2); color:var(--text);">❌ إزالة من السماح</button>`
+          : `<button class="tbtn btn-toggle-dev-white" data-target="${escapeHtml(targetId)}" style="font-size:11px; padding:3px 8px; background:var(--teal);">✅ سماح (Whitelist)</button>`;
+
+        var blackBtn = isBlack
+          ? `<button class="tbtn btn-toggle-dev-black" data-target="${escapeHtml(targetId)}" style="font-size:11px; padding:3px 8px; background:var(--teal);">🟢 إلغاء الحظر</button>`
+          : `<button class="tbtn danger btn-toggle-dev-black" data-target="${escapeHtml(targetId)}" style="font-size:11px; padding:3px 8px;">⛔ حظر (Blacklist)</button>`;
+
+        actionsHtml = `<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">${whiteBtn} ${blackBtn}</div>`;
+      }
+
+      var devTypeClass = (dev.deviceType || "").toLowerCase() === "mobile" ? "b-mob" : ((dev.deviceType || "").toLowerCase() === "tablet" ? "b-tab" : "b-desk");
+
+      $tbody.append(`
+        <tr style="${isOwner ? 'background:rgba(30,143,213,0.04);' : ''}">
+          <td style="font-weight:700; color:var(--dim);">${idx + 1}</td>
+          <td>
+            <div style="font-weight:700; font-size:13px; color:var(--navy);">${escapeHtml(dev.deviceName)}</div>
+            <div style="font-size:11px; color:var(--dim); margin-top:2px;">
+              <span class="badge ${devTypeClass}" style="font-size:10px; padding:1px 6px;">${escapeHtml(dev.deviceType)}</span>
+              ${escapeHtml(dev.browser)}
+            </div>
+          </td>
+          <td>
+            <code style="font-family:monospace; font-size:11.5px; font-weight:700; background:rgba(18,36,94,0.06); padding:3px 6px; border-radius:6px; color:var(--navy);">
+              ${escapeHtml(dev.deviceId || "—")}
+            </code>
+          </td>
+          <td>
+            <span style="font-family:monospace; font-size:12px; color:var(--dim);">${escapeHtml(dev.ip || "—")}</span>
+          </td>
+          <td>
+            <div style="font-size:12.5px; font-weight:600;">${escapeHtml(dev.lastUser)}</div>
+            ${dev.userRole ? `<small style="color:var(--dim);">(${escapeHtml(dev.userRole)})</small>` : ''}
+          </td>
+          <td style="white-space:nowrap; font-size:12px;">${timeFormatted}</td>
+          <td>
+            <span class="badge b-desk" style="font-weight:700;">${dev.visitCount}</span>
+          </td>
+          <td>${statusHtml}</td>
+          <td style="text-align:center;">${actionsHtml}</td>
+        </tr>
+      `);
+    });
+  }
+
+  // Toggle Whitelist from Unique Devices table
+  $(document).on("click", ".btn-toggle-dev-white", function () {
+    var target = String($(this).data("target") || "").trim();
+    if (!target) return;
+    if (isOwnerIdentifier(target)) {
+      alert("⚠️ هذا جهاز المطور / المالك وهو مسموح له دائماً.");
+      return;
+    }
+    var cfg = AccessControl.getConfig();
+    if (cfg.whitelist.includes(target)) {
+      cfg.whitelist = cfg.whitelist.filter(item => item !== target);
+    } else {
+      cfg.whitelist.push(target);
+      cfg.blacklist = cfg.blacklist.filter(item => item !== target);
+    }
+    AccessControl.saveConfig(cfg);
+    renderACUI();
+    renderUniqueDevices();
+    renderTable();
+  });
+
+  // Toggle Blacklist from Unique Devices table
+  $(document).on("click", ".btn-toggle-dev-black", function () {
+    var target = String($(this).data("target") || "").trim();
+    if (!target) return;
+    if (isOwnerIdentifier(target)) {
+      alert("⚠️ لا يمكن حظر جهاز المطور / المالك (مسموح له دائماً).");
+      return;
+    }
+    var cfg = AccessControl.getConfig();
+    if (cfg.blacklist.includes(target)) {
+      cfg.blacklist = cfg.blacklist.filter(item => item !== target);
+    } else {
+      cfg.blacklist.push(target);
+      cfg.whitelist = cfg.whitelist.filter(item => item !== target);
+    }
+    AccessControl.saveConfig(cfg);
+    renderACUI();
+    renderUniqueDevices();
+    renderTable();
+  });
+
+  $("#srchDevices, #fltDeviceStatus").on("input change", renderUniqueDevices);
 
   /* ---------------- Render Table & Pagination ---------------- */
   function renderTable() {
