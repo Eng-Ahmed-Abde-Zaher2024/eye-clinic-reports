@@ -75,13 +75,13 @@
 }
 
 [data-theme="pink"] .topbar-user-name {
-  color: rgba(255,255,255,0.8) !important;
-  background: rgba(255,255,255,0.12) !important;
-  border-color: rgba(255,255,255,0.2) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 [data-theme="pink"] .topbar-nav a {
-  color: rgba(255,255,255,0.75) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 
 [data-theme="pink"] .topbar-nav a:hover {
@@ -89,36 +89,36 @@
 }
 
 [data-theme="pink"] .topbar-nav a.active {
-  background: rgba(255,255,255,0.18) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #fff !important;
-  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.25) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.25) !important;
 }
 
 [data-theme="pink"] .topbar-nav a.active::after {
   background: #fda4af !important;
-  box-shadow: 0 0 8px rgba(253,164,175,0.7) !important;
+  box-shadow: 0 0 8px rgba(253, 164, 175, 0.7) !important;
 }
 
 /* أزرار outline على النافبار */
 [data-theme="pink"] .topbar .btn-outline {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
-  border-color: rgba(255,255,255,0.25) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 [data-theme="pink"] .topbar .btn-outline:hover {
-  background: rgba(255,255,255,0.22) !important;
-  border-color: rgba(255,255,255,0.4) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* زر الهامبرغر في الثيم الوردي */
 [data-theme="pink"] .nav-hamburger {
-  background: rgba(255,255,255,0.12) !important;
-  border-color: rgba(255,255,255,0.25) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 [data-theme="pink"] .nav-hamburger:hover {
-  background: rgba(255,255,255,0.22) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
 }
 
 
@@ -460,7 +460,7 @@ a {
   top: 0;
   z-index: 100;
   gap: 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Animated top accent line */
@@ -489,17 +489,17 @@ a {
   width: 40px;
   height: 40px;
   object-fit: contain;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   padding: 4px;
   flex-shrink: 0;
-  border: 1.5px solid rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .topbar-brand:hover img {
   transform: scale(1.08) rotate(-3deg);
-  box-shadow: 0 4px 16px rgba(99,196,238,0.35);
+  box-shadow: 0 4px 16px rgba(99, 196, 238, 0.35);
 }
 
 .topbar-clinic-name {
@@ -526,7 +526,7 @@ a {
 .topbar-nav a {
   position: relative;
   text-decoration: none;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 13.5px;
   font-weight: 600;
   padding: 8px 18px;
@@ -540,7 +540,7 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   opacity: 0;
   transform: scale(0.85);
@@ -558,8 +558,8 @@ a {
 
 .topbar-nav a.active {
   color: #fff;
-  background: rgba(255,255,255,0.14);
-  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.18);
 }
 
 /* glowing underline on active */
@@ -573,7 +573,7 @@ a {
   height: 3px;
   background: var(--orange);
   border-radius: 3px;
-  box-shadow: 0 0 8px rgba(245,130,12,0.7);
+  box-shadow: 0 0 8px rgba(245, 130, 12, 0.7);
 }
 
 /* ── Right zone ── */
@@ -586,15 +586,15 @@ a {
 
 .topbar-user-name {
   font-size: 12.5px;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.65);
   white-space: nowrap;
   max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   padding: 5px 11px;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* ── زر ومؤشر المزامنة العائم (Floating Sync Widget) ── */
@@ -654,8 +654,17 @@ a {
 }
 
 @keyframes syncPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
 }
 
 .sync-badge-time {
@@ -674,7 +683,9 @@ a {
 }
 
 @keyframes syncSpin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media print {
@@ -688,6 +699,7 @@ a {
     bottom: 14px;
     left: 14px;
   }
+
   .floating-sync-btn {
     padding: 6px 12px !important;
     font-size: 11.5px !important;
@@ -749,8 +761,8 @@ a {
   gap: 5px;
   width: 40px;
   height: 40px;
-  background: rgba(255,255,255,0.1);
-  border: 1.5px solid rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   border-radius: 10px;
   cursor: pointer;
   padding: 0;
@@ -759,7 +771,7 @@ a {
 }
 
 .nav-hamburger:hover {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .nav-hamburger span {
@@ -776,10 +788,12 @@ a {
 .nav-hamburger.open span:nth-child(1) {
   transform: translateY(7px) rotate(45deg);
 }
+
 .nav-hamburger.open span:nth-child(2) {
   opacity: 0;
   width: 0;
 }
+
 .nav-hamburger.open span:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
 }
@@ -789,7 +803,7 @@ a {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(5,12,40,0.55);
+  background: rgba(5, 12, 40, 0.55);
   z-index: 98;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -813,11 +827,11 @@ a {
   background: linear-gradient(160deg, var(--navy-deep) 0%, #152060 100%);
   z-index: 99;
   padding: 0;
-  box-shadow: -8px 0 40px rgba(5,10,40,0.5);
+  box-shadow: -8px 0 40px rgba(5, 10, 40, 0.5);
   transform: translateX(100%);
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-y: auto;
-  border-left: 1px solid rgba(255,255,255,0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .nav-drawer.open {
@@ -830,8 +844,8 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 20px 20px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.09);
-  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-drawer-header-brand {
@@ -844,10 +858,10 @@ a {
   width: 36px;
   height: 36px;
   object-fit: contain;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 3px;
-  border: 1px solid rgba(255,255,255,0.18);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .nav-drawer-header-brand span {
@@ -860,14 +874,14 @@ a {
 .nav-drawer-close {
   width: 34px;
   height: 34px;
-  background: rgba(255,255,255,0.08);
-  border: 1.5px solid rgba(255,255,255,0.14);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 18px;
   line-height: 1;
   transition: background 0.2s ease;
@@ -875,7 +889,7 @@ a {
 }
 
 .nav-drawer-close:hover {
-  background: rgba(255,255,255,0.16);
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
 }
 
@@ -888,7 +902,7 @@ a {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
   padding: 6px 10px 8px;
   margin-bottom: 4px;
@@ -899,7 +913,7 @@ a {
   align-items: center;
   gap: 11px;
   text-decoration: none;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14.5px;
   font-weight: 600;
   padding: 12px 14px;
@@ -918,15 +932,15 @@ a {
 }
 
 .nav-drawer a:hover {
-  background: rgba(255,255,255,0.09);
+  background: rgba(255, 255, 255, 0.09);
   color: #fff;
   transform: translateX(-3px);
 }
 
 .nav-drawer a.active {
-  background: linear-gradient(90deg, rgba(30,143,213,0.28), rgba(30,143,213,0.12));
+  background: linear-gradient(90deg, rgba(30, 143, 213, 0.28), rgba(30, 143, 213, 0.12));
   color: #fff;
-  border: 1px solid rgba(99,196,238,0.25);
+  border: 1px solid rgba(99, 196, 238, 0.25);
 }
 
 .nav-drawer a.active::before {
@@ -939,7 +953,7 @@ a {
   height: 60%;
   background: var(--orange);
   border-radius: 3px 0 0 3px;
-  box-shadow: 0 0 8px rgba(245,130,12,0.6);
+  box-shadow: 0 0 8px rgba(245, 130, 12, 0.6);
 }
 
 /* Drawer footer (user info + actions) */
@@ -947,8 +961,8 @@ a {
   position: sticky;
   bottom: 0;
   padding: 14px 12px 16px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -959,9 +973,9 @@ a {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-drawer-user-avatar {
@@ -993,7 +1007,7 @@ a {
 
 .nav-drawer-user-role {
   font-size: 11px;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 1px;
 }
 
@@ -1037,8 +1051,8 @@ a {
 }
 
 [data-theme="pink"] .nav-drawer a.active {
-  background: linear-gradient(90deg, rgba(236,72,153,0.32), rgba(236,72,153,0.12));
-  border-color: rgba(244,114,182,0.3);
+  background: linear-gradient(90deg, rgba(236, 72, 153, 0.32), rgba(236, 72, 153, 0.12));
+  border-color: rgba(244, 114, 182, 0.3);
 }
 
 [data-theme="pink"] .nav-drawer a.active::before {
@@ -1047,7 +1061,7 @@ a {
 
 [data-theme="pink"] .topbar {
   background: linear-gradient(105deg, #831843 0%, #be185d 60%, #ec4899 100%) !important;
-  border-bottom-color: rgba(244,114,182,0.2) !important;
+  border-bottom-color: rgba(244, 114, 182, 0.2) !important;
 }
 
 [data-theme="pink"] .topbar-clinic-name {
@@ -1372,7 +1386,7 @@ a {
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  color: #334155;
+  color: #0f172a;
 }
 
 .a4-body p {
@@ -1380,22 +1394,48 @@ a {
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  color: #334155;
+  color: #0f172a;
 }
 
 .a4-body strong {
-  color: var(--navy);
-  font-weight: 700;
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .tpl-val {
-  color: inherit;
-  font-weight: inherit;
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .tpl-placeholder {
   color: #e11d48;
   font-weight: 700;
+}
+
+/* بطاقة الطبيب في نهاية التقرير (المعاينة + الطباعة الورقية) */
+.report-doctor-sig {
+  margin-top: 85px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: right;
+  direction: rtl;
+}
+
+.report-doctor-name {
+  font-family: "Cairo", "Tajawal", sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.3;
+}
+
+.report-doctor-title {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .a4-footer {
@@ -1541,8 +1581,13 @@ a {
 }
 
 @keyframes backdropFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-box {
@@ -1551,7 +1596,7 @@ a {
   width: 100%;
   max-width: 520px;
   padding: 26px 24px 22px;
-  box-shadow: 0 20px 60px -10px rgba(10,20,50,0.4);
+  box-shadow: 0 20px 60px -10px rgba(10, 20, 50, 0.4);
   max-height: 90vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -1560,8 +1605,15 @@ a {
 }
 
 @keyframes modalSlideIn {
-  from { transform: translateY(18px) scale(0.97); opacity: 0; }
-  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+  from {
+    transform: translateY(18px) scale(0.97);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-box h3 {
@@ -1640,8 +1692,15 @@ textarea.dyn-input {
   }
 
   @keyframes modalSlideUp {
-    from { transform: translateY(100%); opacity: 0.6; }
-    to   { transform: translateY(0);   opacity: 1; }
+    from {
+      transform: translateY(100%);
+      opacity: 0.6;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   /* مقبض سحب المودال */
@@ -1756,6 +1815,7 @@ textarea.dyn-input {
   letter-spacing: 0.3px;
   background: linear-gradient(135deg, #ffffff 0%, #63c4ee 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

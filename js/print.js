@@ -69,11 +69,12 @@ $(async function () {
     }
   }
 
-  // ---- عند تغيير الطبيب المختار ----
+  // ---- عند تغيير الطبيب المختار (اختياري) ----
   $("#doctorSelect").on("change", function () {
     const id = $(this).val();
     const doctor = id ? DB.Doctors.get(id) : null;
     applyDoctorToHeader(doctor);
+    renderPreview(); // تحديث سطر الطبيب في بودي التقرير فوراً
   });
 
   let currentTemplate = null;
@@ -203,12 +204,29 @@ $(async function () {
       html = html.replace(re, safeVal);
     });
 
-    // إزالة أي فقرات تحتوي على متغيّرات تم حذفها من قائمة حقول القالب (مثل {{treatment}})
+    // إزالة أي فقرات تحتوي على متغيّرات تم حذفها من قائمة حقول القالب
     html = html.replace(/<p>[^<]*\{\{\s*[\w-]+\s*\}\}[^<]*<\/p>/gi, "");
     // تنظيف أي أقواس متغيّرات متبقية لم تُستبدل
     html = html.replace(/\{\{\s*[\w-]+\s*\}\}/g, "");
+    // إزالة الفقرات الفاضية أو المحتوية على رموز فقط
+    html = html.replace(/<p[^>]*>\s*[.،:؛\-–—\s]*\s*<\/p>/gi, "");
 
     $("#reportBody").html(html);
+
+    // ---- بطاقة الطبيب في نهاية التقرير (تظهر في المعاينة والطباعة) ----
+    const doctorId = $("#doctorSelect").val();
+    const doctor = doctorId ? DB.Doctors.get(doctorId) : null;
+    if (doctor && doctor.name) {
+      const titleHtml = doctor.title
+        ? `<div class="report-doctor-title">${escapeHtml(doctor.title)}</div>`
+        : "";
+      $("#reportBody").append(
+        `<div class="report-doctor-sig">
+           <div class="report-doctor-name">${escapeHtml(doctor.name)}</div>
+           ${titleHtml}
+         </div>`
+      );
+    }
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, "0");

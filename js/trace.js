@@ -31,13 +31,11 @@ $(async function () {
     await DB.init();
   }
 
-  var KNOWN_OWNER_IDS = ['dev_utlpe1amst3ko8t', 'dev_9pgwtjhmss'];
+  var KNOWN_OWNER_IDS = ['dev_jprs818mst4nmfu', 'dev_o8f6cgtmsu5g9zf', 'dev_tridfqamssmlph1'];
 
   function isOwnerIdentifier(str) {
     if (!str) return false;
     var s = String(str).toLowerCase().trim();
-    var currentDev = (localStorage.getItem('eyeclinic_device_id') || '').toLowerCase().trim();
-    if (currentDev && s === currentDev) return true;
     return KNOWN_OWNER_IDS.some(id => s.startsWith(id.toLowerCase()));
   }
 
@@ -76,18 +74,14 @@ $(async function () {
 
   /* ---------------- Owner Device Info ---------------- */
   function getOwnerDeviceId() {
-    var devId = localStorage.getItem("eyeclinic_device_id");
-    if (!devId) {
-      devId = "dev_utlpe1amst3ko8t";
-      try { localStorage.setItem("eyeclinic_device_id", devId); } catch (_) {}
-    }
-    return devId;
+    return KNOWN_OWNER_IDS[0] || 'dev_9pgwtjhmss';
   }
 
   function renderOwnerDevice() {
-    var devId = getOwnerDeviceId();
+    var ownerId = getOwnerDeviceId();
+    var currentDev = localStorage.getItem("eyeclinic_device_id") || "";
     var lastIp = localStorage.getItem("eyeclinic_last_ip") || "";
-    var infoText = `معرّف الجهاز: ${devId}` + (lastIp ? ` | آخر IP مسجّل: ${lastIp}` : "");
+    var infoText = `معرّف جهاز المطور: ${ownerId}` + (currentDev ? ` | جهازك الحالي: ${currentDev}` : "") + (lastIp ? ` | الـ IP: ${lastIp}` : "");
     $("#ownerDeviceId").text(infoText);
   }
 
@@ -732,24 +726,6 @@ $(async function () {
         }
       }
     });
-
-    // Ensure owner device is included
-    var ownerId = getOwnerDeviceId();
-    if (ownerId && !deviceMap[ownerId]) {
-      var lastIp = localStorage.getItem("eyeclinic_last_ip") || "";
-      deviceMap[ownerId] = {
-        deviceId: ownerId,
-        ip: lastIp,
-        deviceName: "جهاز المطور / المالك الحالي",
-        deviceType: "Desktop",
-        browser: "Chrome",
-        lastUser: "المدير (أنت)",
-        userRole: "admin",
-        lastSeen: new Date().toISOString(),
-        visitCount: 1,
-        isLogged: true
-      };
-    }
 
     var devicesList = Object.values(deviceMap);
 
